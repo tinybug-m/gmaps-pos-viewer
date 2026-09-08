@@ -15,21 +15,24 @@ export default function SummaryCards({ counts }: { counts: SummaryCounts }) {
 
 type Emphasis = "prospects" | "poor" | "needsImprovement" | "neutral";
 
+// All cards share the same light surface — dominance comes from size and a
+// left accent bar, not from inverting to a dark fill, which reads as a harsh
+// flash next to the pale cards beside it during long reading sessions.
 const EMPHASIS_STYLES: Record<Emphasis, { card: string; value: string; label: string }> = {
   prospects: {
-    card: "bg-slate-900 ring-1 ring-slate-900",
-    value: "text-white",
-    label: "text-slate-300",
+    card: "bg-white ring-1 ring-slate-200 border-l-4 border-l-slate-700",
+    value: "text-slate-800",
+    label: "text-slate-500",
   },
   poor: {
-    card: "bg-red-50 ring-1 ring-red-200",
-    value: "text-red-700",
-    label: "text-red-600",
+    card: "bg-red-50/60 ring-1 ring-red-100",
+    value: "text-red-800",
+    label: "text-red-700/80",
   },
   needsImprovement: {
-    card: "bg-amber-50 ring-1 ring-amber-200",
-    value: "text-amber-700",
-    label: "text-amber-600",
+    card: "bg-amber-50/60 ring-1 ring-amber-100",
+    value: "text-amber-800",
+    label: "text-amber-700/80",
   },
   neutral: {
     card: "bg-white ring-1 ring-slate-200",

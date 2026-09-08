@@ -38,7 +38,7 @@ export default function MultiSelectDropdown({
         onClick={() => setOpen((o) => !o)}
         className={`flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium ${
           selected.size > 0
-            ? "border-slate-400 bg-slate-50 text-slate-900"
+            ? "border-slate-400 bg-slate-50 text-slate-800"
             : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
         }`}
       >

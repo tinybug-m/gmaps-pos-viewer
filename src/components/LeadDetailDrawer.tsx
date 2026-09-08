@@ -28,7 +28,7 @@ export default function LeadDetailDrawer({ lead, onClose }: { lead: Lead; onClos
       <div className="relative flex h-full w-full max-w-lg flex-col overflow-y-auto bg-white shadow-xl">
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">{lead.name}</h2>
+            <h2 className="text-lg font-semibold text-slate-800">{lead.name}</h2>
             <p className="text-sm text-slate-500">{lead.city}</p>
           </div>
           <button
@@ -76,14 +76,14 @@ export default function LeadDetailDrawer({ lead, onClose }: { lead: Lead; onClos
           </dl>
 
           {lead.crawlFailed && (
-            <p className="rounded-lg bg-violet-50 px-4 py-3 text-sm text-violet-700 ring-1 ring-inset ring-violet-200">
+            <p className="rounded-lg bg-sky-50 px-4 py-3 text-sm text-sky-800">
               This site could not be crawled automatically, so its SEO signals are unknown. Treat as{" "}
               <strong>manual review</strong> rather than a confirmed SEO problem.
             </p>
           )}
 
           <div>
-            <h3 className="mb-3 text-sm font-semibold text-slate-900">
+            <h3 className="mb-3 text-sm font-semibold text-slate-800">
               {lead.crawlFailed ? "Crawl details" : "Technical SEO opportunities"}
             </h3>
             <IssueList issues={lead.issues} />
@@ -104,7 +104,7 @@ function Detail({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
       <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</dt>
-      <dd className="mt-1 text-sm text-slate-900">{value}</dd>
+      <dd className="mt-1 text-sm text-slate-800">{value}</dd>
     </div>
   );
 }

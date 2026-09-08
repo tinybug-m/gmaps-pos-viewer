@@ -26,11 +26,11 @@ export default function LeadTableRow({
         <PriorityBadge priority={lead.priority} />
       </td>
       <td className="px-4 py-3">
-        <p className="font-medium text-slate-900">{lead.name}</p>
+        <p className="font-medium text-slate-800">{lead.name}</p>
         <p className="text-xs text-slate-400">{lead.city}</p>
       </td>
       <td className="whitespace-nowrap px-4 py-3">
-        <span className="font-semibold tabular-nums text-slate-900">{lead.seoScore}</span>
+        <span className="font-semibold tabular-nums text-slate-800">{lead.seoScore}</span>
         <span className="text-slate-400">/100</span>
       </td>
       <td className="whitespace-nowrap px-4 py-3">
@@ -38,7 +38,7 @@ export default function LeadTableRow({
       </td>
       <td className="px-4 py-3 text-sm text-slate-600">
         {lead.crawlFailed ? (
-          <span className="italic text-violet-600">Site could not be crawled — manual review</span>
+          <span className="italic text-sky-700">Site could not be crawled — manual review</span>
         ) : primaryIssues.length === 0 ? (
           <span className="text-slate-400">No issues detected</span>
         ) : (
@@ -64,7 +64,7 @@ export default function LeadTableRow({
           href={lead.websiteUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-900"
+          className="inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-800"
         >
           Website
           <ExternalIcon />
@@ -75,7 +75,7 @@ export default function LeadTableRow({
           href={lead.mapsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-900"
+          className="inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-800"
         >
           Maps
           <ExternalIcon />

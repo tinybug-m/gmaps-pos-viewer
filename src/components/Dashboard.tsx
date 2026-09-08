@@ -49,7 +49,7 @@ export default function Dashboard() {
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">SEO Lead Discovery</h1>
+          <h1 className="text-2xl font-semibold text-slate-800">SEO Lead Discovery</h1>
           <p className="mt-1 text-sm text-slate-500">
             Businesses whose websites show technical SEO opportunities, worst prospects first.
           </p>
@@ -68,7 +68,7 @@ export default function Dashboard() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <SearchBar value={filters.search} onChange={(search) => setFilters({ ...filters, search })} />
           <p className="text-sm text-slate-500">
-            Showing <span className="font-medium text-slate-900">{sorted.length}</span> of{" "}
+            Showing <span className="font-medium text-slate-800">{sorted.length}</span> of{" "}
             {leads.length} businesses
           </p>
         </div>

@@ -46,12 +46,12 @@ export default function FilterBar({
             key={status}
             type="button"
             onClick={() => toggleStatus(status)}
-            className={`rounded-full px-3 py-1.5 text-sm font-medium ring-1 ring-inset transition-colors ${
+            className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
               filters.statuses.has(status)
                 ? status === "POOR"
-                  ? "bg-red-50 text-red-700 ring-red-300"
-                  : "bg-amber-50 text-amber-700 ring-amber-300"
-                : "bg-white text-slate-500 ring-slate-300 hover:bg-slate-50"
+                  ? "bg-red-50 text-red-800"
+                  : "bg-amber-50 text-amber-800"
+                : "bg-white text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
             }`}
           >
             {label}
@@ -79,10 +79,10 @@ export default function FilterBar({
             key={band.key}
             type="button"
             onClick={() => toggleScoreBand(band.key)}
-            className={`rounded-full px-3 py-1.5 text-sm font-medium ring-1 ring-inset transition-colors ${
+            className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
               filters.scoreBands.has(band.key)
-                ? "bg-slate-100 text-slate-800 ring-slate-400"
-                : "bg-white text-slate-500 ring-slate-300 hover:bg-slate-50"
+                ? "bg-slate-100 text-slate-800"
+                : "bg-white text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
             }`}
           >
             {band.label}
@@ -133,14 +133,14 @@ function ToggleChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ring-1 ring-inset transition-colors ${
+      className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
         active
-          ? "bg-violet-50 text-violet-700 ring-violet-300"
-          : "bg-white text-slate-500 ring-slate-300 hover:bg-slate-50"
+          ? "bg-sky-50 text-sky-700"
+          : "bg-white text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
       }`}
     >
       <span
-        className={`h-2 w-2 rounded-full ${active ? "bg-violet-500" : "bg-slate-300"}`}
+        className={`h-2 w-2 rounded-full ${active ? "bg-sky-500" : "bg-slate-300"}`}
         aria-hidden
       />
       {label}

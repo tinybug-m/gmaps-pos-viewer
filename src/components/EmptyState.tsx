@@ -21,7 +21,7 @@ export default function EmptyState({
           <path strokeLinecap="round" strokeLinejoin="round" d="M11 11a7 7 0 1 0 0-14 7 7 0 0 0 0 14ZM21 21l-4.35-4.35" />
         </svg>
       </div>
-      <p className="text-sm font-semibold text-slate-900">{title}</p>
+      <p className="text-sm font-semibold text-slate-800">{title}</p>
       <p className="max-w-sm text-sm text-slate-500">{description}</p>
       {onClear && (
         <button

@@ -67,12 +67,5 @@ export const SEVERITY_DOT_CLASS: Record<IssueSeverity, string> = {
   critical: "bg-red-500",
   important: "bg-amber-500",
   optimization: "bg-slate-400",
-  crawl: "bg-violet-500",
-};
-
-export const SEVERITY_TEXT_CLASS: Record<IssueSeverity, string> = {
-  critical: "text-red-700",
-  important: "text-amber-700",
-  optimization: "text-slate-600",
-  crawl: "text-violet-700",
+  crawl: "bg-sky-500",
 };

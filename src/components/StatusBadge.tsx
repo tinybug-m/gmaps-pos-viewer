@@ -1,10 +1,12 @@
 import type { LeadStatus } from "@/types/lead";
 
+// Kept to three low-saturation hues total (red, amber, gray/blue-gray) so a
+// dense table of badges doesn't fight for attention across many rows.
 const STATUS_STYLES: Record<LeadStatus, string> = {
-  POOR: "bg-red-50 text-red-700 ring-red-600/20",
-  NEEDS_IMPROVEMENT: "bg-amber-50 text-amber-700 ring-amber-600/20",
-  GOOD: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  CRAWL_FAILED: "bg-slate-100 text-slate-600 ring-slate-500/20",
+  POOR: "bg-red-50 text-red-800",
+  NEEDS_IMPROVEMENT: "bg-amber-50 text-amber-800",
+  GOOD: "bg-slate-100 text-slate-500",
+  CRAWL_FAILED: "bg-sky-50 text-sky-700",
 };
 
 const STATUS_LABEL: Record<LeadStatus, string> = {
@@ -17,7 +19,7 @@ const STATUS_LABEL: Record<LeadStatus, string> = {
 export default function StatusBadge({ status }: { status: LeadStatus }) {
   return (
     <span
-      className={`inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${STATUS_STYLES[status]}`}
+      className={`inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[status]}`}
     >
       {STATUS_LABEL[status]}
     </span>
