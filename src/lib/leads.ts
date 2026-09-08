@@ -73,13 +73,17 @@ function buildLead(raw: RawLead, index: number): Lead {
   };
 }
 
-let cachedLeads: Lead[] | null = null;
+export function buildLeads(rawLeads: RawLead[]): Lead[] {
+  return rawLeads.map(buildLead);
+}
 
-export function getLeads(): Lead[] {
-  if (!cachedLeads) {
-    cachedLeads = getRawLeads().map(buildLead);
+let cachedSampleLeads: Lead[] | null = null;
+
+export function getSampleLeads(): Lead[] {
+  if (!cachedSampleLeads) {
+    cachedSampleLeads = buildLeads(getRawLeads());
   }
-  return cachedLeads;
+  return cachedSampleLeads;
 }
 
 export interface SummaryCounts {

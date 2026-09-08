@@ -1,0 +1,68 @@
+import type { RawLead, RawSeoStatus } from "@/types/lead";
+
+const VALID_STATUSES: RawSeoStatus[] = ["GOOD", "NEEDS_IMPROVEMENT", "POOR"];
+
+export class LeadDataError extends Error {}
+
+/** Parses and validates an uploaded JSON file into the same shape the sample dataset uses. */
+export function parseRawLeads(json: string): RawLead[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    throw new LeadDataError("That file isn't valid JSON.");
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new LeadDataError('Expected a JSON array of businesses, e.g. [{ "name": ..., "seoScore": ... }].');
+  }
+  if (parsed.length === 0) {
+    throw new LeadDataError("The file doesn't contain any businesses.");
+  }
+
+  return parsed.map((item, index) => validateLead(item, index));
+}
+
+function validateLead(item: unknown, index: number): RawLead {
+  const label = `Business #${index + 1}`;
+  if (typeof item !== "object" || item === null) {
+    throw new LeadDataError(`${label} is not a valid object.`);
+  }
+  const rec = item as Record<string, unknown>;
+
+  if (typeof rec.name !== "string" || !rec.name.trim()) {
+    throw new LeadDataError(`${label} is missing a "name".`);
+  }
+  const named = `${label} ("${rec.name}")`;
+
+  if (typeof rec.mapsUrl !== "string") {
+    throw new LeadDataError(`${named} is missing a "mapsUrl" string.`);
+  }
+  if (typeof rec.websiteUrl !== "string") {
+    throw new LeadDataError(`${named} is missing a "websiteUrl" string.`);
+  }
+  if (typeof rec.seoScore !== "number" || Number.isNaN(rec.seoScore)) {
+    throw new LeadDataError(`${named} has an invalid "seoScore" (expected a number).`);
+  }
+  if (typeof rec.seoStatus !== "string" || !VALID_STATUSES.includes(rec.seoStatus as RawSeoStatus)) {
+    throw new LeadDataError(
+      `${named} has an invalid "seoStatus" (expected GOOD, NEEDS_IMPROVEMENT, or POOR).`
+    );
+  }
+  if (!Array.isArray(rec.issues) || !rec.issues.every((i) => typeof i === "string")) {
+    throw new LeadDataError(`${named} has an invalid "issues" list (expected an array of strings).`);
+  }
+  if (typeof rec.city !== "string") {
+    throw new LeadDataError(`${named} is missing a "city" string.`);
+  }
+
+  return {
+    name: rec.name,
+    mapsUrl: rec.mapsUrl,
+    websiteUrl: rec.websiteUrl,
+    seoScore: rec.seoScore,
+    seoStatus: rec.seoStatus as RawSeoStatus,
+    issues: rec.issues as string[],
+    city: rec.city,
+  };
+}

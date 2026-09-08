@@ -49,8 +49,8 @@ export default function FilterBar({
             className={`rounded-full px-3 py-1.5 text-sm font-medium ring-1 ring-inset transition-colors ${
               filters.statuses.has(status)
                 ? status === "POOR"
-                  ? "bg-red-600 text-white ring-red-600"
-                  : "bg-amber-500 text-white ring-amber-500"
+                  ? "bg-red-50 text-red-700 ring-red-300"
+                  : "bg-amber-50 text-amber-700 ring-amber-300"
                 : "bg-white text-slate-500 ring-slate-300 hover:bg-slate-50"
             }`}
           >
@@ -81,7 +81,7 @@ export default function FilterBar({
             onClick={() => toggleScoreBand(band.key)}
             className={`rounded-full px-3 py-1.5 text-sm font-medium ring-1 ring-inset transition-colors ${
               filters.scoreBands.has(band.key)
-                ? "bg-slate-900 text-white ring-slate-900"
+                ? "bg-slate-100 text-slate-800 ring-slate-400"
                 : "bg-white text-slate-500 ring-slate-300 hover:bg-slate-50"
             }`}
           >

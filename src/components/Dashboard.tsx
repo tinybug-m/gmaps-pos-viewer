@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import DataUpload from "@/components/DataUpload";
 import EmptyState from "@/components/EmptyState";
 import FilterBar from "@/components/FilterBar";
 import LeadDetailDrawer from "@/components/LeadDetailDrawer";
@@ -9,12 +10,16 @@ import LeadTable from "@/components/LeadTable";
 import SearchBar from "@/components/SearchBar";
 import SummaryCards from "@/components/SummaryCards";
 import { applyFilters, defaultFilters, isDefaultFilters, type LeadFilters } from "@/lib/filters";
-import { getCities, getIssueOptions, getLeads, getSummaryCounts } from "@/lib/leads";
+import { buildLeads, getCities, getIssueOptions, getSampleLeads, getSummaryCounts } from "@/lib/leads";
 import { DEFAULT_SORT, sortLeads, type SortState } from "@/lib/sort";
-import type { Lead } from "@/types/lead";
+import type { Lead, RawLead } from "@/types/lead";
 
 export default function Dashboard() {
-  const leads = useMemo(() => getLeads(), []);
+  const sampleLeads = useMemo(() => getSampleLeads(), []);
+  const [customLeads, setCustomLeads] = useState<Lead[] | null>(null);
+  const [customFileName, setCustomFileName] = useState<string | null>(null);
+  const leads = customLeads ?? sampleLeads;
+
   const cities = useMemo(() => getCities(leads), [leads]);
   const issueOptions = useMemo(() => getIssueOptions(leads), [leads]);
   const counts = useMemo(() => getSummaryCounts(leads), [leads]);
@@ -26,13 +31,35 @@ export default function Dashboard() {
   const filtered = useMemo(() => applyFilters(leads, filters), [leads, filters]);
   const sorted = useMemo(() => sortLeads(filtered, sort), [filtered, sort]);
 
+  function handleUpload(rawLeads: RawLead[], fileName: string) {
+    setCustomLeads(buildLeads(rawLeads));
+    setCustomFileName(fileName);
+    setFilters(defaultFilters());
+    setSelectedLead(null);
+  }
+
+  function handleResetToSample() {
+    setCustomLeads(null);
+    setCustomFileName(null);
+    setFilters(defaultFilters());
+    setSelectedLead(null);
+  }
+
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
-      <header>
-        <h1 className="text-2xl font-semibold text-slate-900">SEO Lead Discovery</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Businesses whose websites show technical SEO opportunities, worst prospects first.
-        </p>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">SEO Lead Discovery</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Businesses whose websites show technical SEO opportunities, worst prospects first.
+          </p>
+        </div>
+        <DataUpload
+          onUpload={handleUpload}
+          onReset={handleResetToSample}
+          isCustom={customLeads !== null}
+          fileName={customFileName}
+        />
       </header>
 
       <SummaryCards counts={counts} />
