@@ -21,7 +21,7 @@ export interface LeadFilters {
 
 export function defaultFilters(): LeadFilters {
   return {
-    statuses: new Set<LeadStatus>(["POOR", "NEEDS_IMPROVEMENT"]),
+    statuses: new Set<LeadStatus>(["POOR", "NEEDS_IMPROVEMENT", "NO_WEBSITE"]),
     scoreBands: new Set(),
     cities: new Set(),
     issueTemplates: new Set(),
@@ -46,8 +46,11 @@ function setsEqual<T>(a: Set<T>, b: Set<T>): boolean {
   return true;
 }
 
-function matchesScoreBand(score: number, bands: Set<ScoreBand>): boolean {
+function matchesScoreBand(score: number | null, bands: Set<ScoreBand>): boolean {
   if (bands.size === 0) return true;
+  // A score-band filter is specifically about crawled sites, so a lead with
+  // no score (no website) can't match one — it's excluded, not defaulted in.
+  if (score === null) return false;
   return SCORE_BANDS.some((b) => bands.has(b.key) && score >= b.min && score <= b.max);
 }
 

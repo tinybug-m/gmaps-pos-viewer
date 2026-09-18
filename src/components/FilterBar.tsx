@@ -4,9 +4,10 @@ import MultiSelectDropdown from "@/components/MultiSelectDropdown";
 import { SCORE_BANDS, defaultFilters, isDefaultFilters, type LeadFilters, type ScoreBand } from "@/lib/filters";
 import type { LeadStatus } from "@/types/lead";
 
-const CORE_STATUS_PILLS: { status: LeadStatus; label: string }[] = [
-  { status: "POOR", label: "Poor" },
-  { status: "NEEDS_IMPROVEMENT", label: "Needs Improvement" },
+const CORE_STATUS_PILLS: { status: LeadStatus; label: string; activeClass: string }[] = [
+  { status: "POOR", label: "Poor", activeClass: "bg-red-50 text-red-800" },
+  { status: "NEEDS_IMPROVEMENT", label: "Needs Improvement", activeClass: "bg-amber-50 text-amber-800" },
+  { status: "NO_WEBSITE", label: "No Website", activeClass: "bg-teal-50 text-teal-800" },
 ];
 
 export default function FilterBar({
@@ -41,16 +42,14 @@ export default function FilterBar({
     <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3.5">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Status</span>
-        {CORE_STATUS_PILLS.map(({ status, label }) => (
+        {CORE_STATUS_PILLS.map(({ status, label, activeClass }) => (
           <button
             key={status}
             type="button"
             onClick={() => toggleStatus(status)}
             className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
               filters.statuses.has(status)
-                ? status === "POOR"
-                  ? "bg-red-50 text-red-800"
-                  : "bg-amber-50 text-amber-800"
+                ? activeClass
                 : "bg-white text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
             }`}
           >

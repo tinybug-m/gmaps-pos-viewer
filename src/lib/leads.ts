@@ -18,7 +18,8 @@ function slugify(name: string, index: number): string {
 
 function computeStatus(raw: RawLead, crawlFailed: boolean): LeadStatus {
   if (crawlFailed) return "CRAWL_FAILED";
-  return raw.seoStatus;
+  // Validation guarantees seoStatus is set whenever a website is present.
+  return raw.seoStatus as LeadStatus;
 }
 
 function computePriority(issues: ParsedIssue[], crawlFailed: boolean): LeadPriority {
@@ -39,11 +40,37 @@ function computePriority(issues: ParsedIssue[], crawlFailed: boolean): LeadPrior
 }
 
 function buildLead(raw: RawLead, index: number): Lead {
-  const parsed = raw.issues.map(parseIssue).filter((i): i is ParsedIssue => i !== null);
+  const hasWebsite = typeof raw.websiteUrl === "string" && raw.websiteUrl.trim() !== "";
+
+  // A business with no website at all isn't a crawl result to grade — it's
+  // its own lead category, and the strongest one: a "build" pitch rather
+  // than a "fix" pitch.
+  if (!hasWebsite) {
+    const searchText = [raw.name, raw.city, "no website"].join(" ").toLowerCase();
+    return {
+      id: slugify(raw.name, index),
+      name: raw.name,
+      mapsUrl: raw.mapsUrl,
+      websiteUrl: null,
+      seoScore: null,
+      status: "NO_WEBSITE",
+      city: raw.city,
+      issues: [{ text: "No website listed for this business", severity: "critical" }],
+      issueCount: 1,
+      priority: "High",
+      crawlFailed: false,
+      responseMs: null,
+      reviewCount: raw.reviewCount ?? null,
+      searchText,
+    };
+  }
+
+  const rawIssues = raw.issues ?? [];
+  const parsed = rawIssues.map(parseIssue).filter((i): i is ParsedIssue => i !== null);
   const crawlFailed = parsed.some((i) => i.severity === "crawl");
 
   const nonCrawlIssues = parsed.filter((i) => i.severity !== "crawl");
-  const responseMs = raw.issues.reduce<number | null>((best, text) => {
+  const responseMs = rawIssues.reduce<number | null>((best, text) => {
     const ms = extractResponseMs(text);
     if (ms === null) return best;
     return best === null ? ms : Math.max(best, ms);
@@ -52,7 +79,7 @@ function buildLead(raw: RawLead, index: number): Lead {
   const status = computeStatus(raw, crawlFailed);
   const priority = computePriority(nonCrawlIssues, crawlFailed);
 
-  const searchText = [raw.name, raw.city, raw.websiteUrl, ...raw.issues]
+  const searchText = [raw.name, raw.city, raw.websiteUrl, ...rawIssues]
     .join(" ")
     .toLowerCase();
 
@@ -60,8 +87,8 @@ function buildLead(raw: RawLead, index: number): Lead {
     id: slugify(raw.name, index),
     name: raw.name,
     mapsUrl: raw.mapsUrl,
-    websiteUrl: raw.websiteUrl,
-    seoScore: raw.seoScore,
+    websiteUrl: raw.websiteUrl as string,
+    seoScore: raw.seoScore ?? 0,
     status,
     city: raw.city,
     issues: parsed,
@@ -69,6 +96,7 @@ function buildLead(raw: RawLead, index: number): Lead {
     priority,
     crawlFailed,
     responseMs,
+    reviewCount: raw.reviewCount ?? null,
     searchText,
   };
 }
@@ -91,6 +119,7 @@ export interface SummaryCounts {
   prospects: number;
   poor: number;
   needsImprovement: number;
+  noWebsite: number;
   good: number;
   crawlFailed: number;
 }
@@ -98,14 +127,16 @@ export interface SummaryCounts {
 export function getSummaryCounts(leads: Lead[]): SummaryCounts {
   const poor = leads.filter((l) => l.status === "POOR").length;
   const needsImprovement = leads.filter((l) => l.status === "NEEDS_IMPROVEMENT").length;
+  const noWebsite = leads.filter((l) => l.status === "NO_WEBSITE").length;
   const good = leads.filter((l) => l.status === "GOOD").length;
   const crawlFailed = leads.filter((l) => l.status === "CRAWL_FAILED").length;
 
   return {
     total: leads.length,
-    prospects: poor + needsImprovement,
+    prospects: poor + needsImprovement + noWebsite,
     poor,
     needsImprovement,
+    noWebsite,
     good,
     crawlFailed,
   };
@@ -118,6 +149,7 @@ export function getCities(leads: Lead[]): string[] {
 export function getIssueOptions(leads: Lead[]): string[] {
   const templates = new Set<string>();
   for (const lead of leads) {
+    if (lead.status === "NO_WEBSITE") continue;
     for (const issue of lead.issues) {
       if (issue.severity === "crawl") continue;
       templates.add(issueTemplateLabel(issue.text));

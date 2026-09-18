@@ -38,9 +38,37 @@ function validateLead(item: unknown, index: number): RawLead {
   if (typeof rec.mapsUrl !== "string") {
     throw new LeadDataError(`${named} is missing a "mapsUrl" string.`);
   }
-  if (typeof rec.websiteUrl !== "string") {
-    throw new LeadDataError(`${named} is missing a "websiteUrl" string.`);
+  if (typeof rec.city !== "string") {
+    throw new LeadDataError(`${named} is missing a "city" string.`);
   }
+
+  // websiteUrl is the branch point: null/missing/empty means "no website",
+  // a business with no crawlable site rather than an invalid record.
+  const websiteRaw = rec.websiteUrl;
+  const hasWebsite =
+    typeof websiteRaw === "string" && websiteRaw.trim() !== "";
+  if (websiteRaw !== null && websiteRaw !== undefined && typeof websiteRaw !== "string") {
+    throw new LeadDataError(`${named} has an invalid "websiteUrl" (expected a string or null).`);
+  }
+
+  let reviewCount: number | undefined;
+  if (rec.reviewCount !== undefined) {
+    if (typeof rec.reviewCount !== "number" || Number.isNaN(rec.reviewCount)) {
+      throw new LeadDataError(`${named} has an invalid "reviewCount" (expected a number).`);
+    }
+    reviewCount = rec.reviewCount;
+  }
+
+  if (!hasWebsite) {
+    return {
+      name: rec.name,
+      mapsUrl: rec.mapsUrl,
+      city: rec.city,
+      websiteUrl: null,
+      reviewCount,
+    };
+  }
+
   if (typeof rec.seoScore !== "number" || Number.isNaN(rec.seoScore)) {
     throw new LeadDataError(`${named} has an invalid "seoScore" (expected a number).`);
   }
@@ -52,17 +80,15 @@ function validateLead(item: unknown, index: number): RawLead {
   if (!Array.isArray(rec.issues) || !rec.issues.every((i) => typeof i === "string")) {
     throw new LeadDataError(`${named} has an invalid "issues" list (expected an array of strings).`);
   }
-  if (typeof rec.city !== "string") {
-    throw new LeadDataError(`${named} is missing a "city" string.`);
-  }
 
   return {
     name: rec.name,
     mapsUrl: rec.mapsUrl,
-    websiteUrl: rec.websiteUrl,
+    city: rec.city,
+    websiteUrl: websiteRaw as string,
     seoScore: rec.seoScore,
     seoStatus: rec.seoStatus as RawSeoStatus,
     issues: rec.issues as string[],
-    city: rec.city,
+    reviewCount,
   };
 }

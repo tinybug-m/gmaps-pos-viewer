@@ -80,7 +80,7 @@ export default function Dashboard() {
           title={isDefaultFilters(filters) ? "No SEO prospects found" : "No businesses match your current filters"}
           description={
             isDefaultFilters(filters)
-              ? "There are no poor or needs-improvement websites in the current dataset."
+              ? "There are no poor, needs-improvement, or no-website businesses in the current dataset."
               : "Try widening your filters or clearing them to see more businesses."
           }
           onClear={() => setFilters(defaultFilters())}

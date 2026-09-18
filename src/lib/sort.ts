@@ -28,7 +28,10 @@ const PRIORITY_RANK: Record<LeadPriority, number> = {
 function compareValues(a: Lead, b: Lead, key: SortKey): number {
   switch (key) {
     case "score":
-      return a.seoScore - b.seoScore;
+      // No-website leads have no score — treat them as "worse than 0" so
+      // they surface first on the default worst-first sort, matching their
+      // High priority rather than getting lost in a null-first/last quirk.
+      return (a.seoScore ?? -1) - (b.seoScore ?? -1);
     case "name":
       return a.name.localeCompare(b.name);
     case "city":
