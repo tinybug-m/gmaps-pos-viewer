@@ -1,5 +1,7 @@
 export type RawSeoStatus = "GOOD" | "NEEDS_IMPROVEMENT" | "POOR";
 
+export type LeadSource = "google-maps" | "trustpilot";
+
 export interface RawLead {
   name: string;
   mapsUrl: string;
@@ -12,6 +14,9 @@ export interface RawLead {
   issues?: string[];
   /** Google Business Profile review count, when the source data includes it. */
   reviewCount?: number;
+  /** Explicit origin of the lead. When omitted it is inferred: a `trustpilotUrl` means Trustpilot, otherwise Google Maps. */
+  source?: LeadSource;
+  trustpilotUrl?: string;
 }
 
 export type IssueSeverity = "critical" | "important" | "optimization" | "crawl";
@@ -44,5 +49,7 @@ export interface Lead {
   crawlFailed: boolean;
   responseMs: number | null;
   reviewCount: number | null;
+  source: LeadSource;
+  trustpilotUrl: string | null;
   searchText: string;
 }

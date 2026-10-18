@@ -1,4 +1,4 @@
-import type { RawLead, RawSeoStatus } from "@/types/lead";
+import type { LeadSource, RawLead, RawSeoStatus } from "@/types/lead";
 
 const VALID_STATUSES: RawSeoStatus[] = ["GOOD", "NEEDS_IMPROVEMENT", "POOR"];
 
@@ -59,6 +59,21 @@ function validateLead(item: unknown, index: number): RawLead {
     reviewCount = rec.reviewCount;
   }
 
+  let source: LeadSource | undefined;
+  if (rec.source !== undefined) {
+    if (rec.source !== "google-maps" && rec.source !== "trustpilot") {
+      throw new LeadDataError(`${named} has an invalid "source" (expected "google-maps" or "trustpilot").`);
+    }
+    source = rec.source;
+  }
+  let trustpilotUrl: string | undefined;
+  if (rec.trustpilotUrl !== undefined && rec.trustpilotUrl !== null && rec.trustpilotUrl !== "") {
+    if (typeof rec.trustpilotUrl !== "string") {
+      throw new LeadDataError(`${named} has an invalid "trustpilotUrl" (expected a string).`);
+    }
+    trustpilotUrl = rec.trustpilotUrl;
+  }
+
   if (!hasWebsite) {
     return {
       name: rec.name,
@@ -66,6 +81,8 @@ function validateLead(item: unknown, index: number): RawLead {
       city: rec.city,
       websiteUrl: null,
       reviewCount,
+      source,
+      trustpilotUrl,
     };
   }
 
@@ -90,5 +107,7 @@ function validateLead(item: unknown, index: number): RawLead {
     seoStatus: rec.seoStatus as RawSeoStatus,
     issues: rec.issues as string[],
     reviewCount,
+    source,
+    trustpilotUrl,
   };
 }

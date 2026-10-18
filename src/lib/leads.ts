@@ -3,6 +3,7 @@ import { extractResponseMs, issueTemplateLabel, parseIssue } from "@/lib/issues"
 import type {
   Lead,
   LeadPriority,
+  LeadSource,
   LeadStatus,
   ParsedIssue,
   RawLead,
@@ -39,6 +40,11 @@ function computePriority(issues: ParsedIssue[], crawlFailed: boolean): LeadPrior
   return "Medium";
 }
 
+function computeSource(raw: RawLead): LeadSource {
+  if (raw.source) return raw.source;
+  return raw.trustpilotUrl ? "trustpilot" : "google-maps";
+}
+
 function buildLead(raw: RawLead, index: number): Lead {
   const hasWebsite = typeof raw.websiteUrl === "string" && raw.websiteUrl.trim() !== "";
 
@@ -61,6 +67,8 @@ function buildLead(raw: RawLead, index: number): Lead {
       crawlFailed: false,
       responseMs: null,
       reviewCount: raw.reviewCount ?? null,
+      source: computeSource(raw),
+      trustpilotUrl: raw.trustpilotUrl ?? null,
       searchText,
     };
   }
@@ -97,6 +105,8 @@ function buildLead(raw: RawLead, index: number): Lead {
     crawlFailed,
     responseMs,
     reviewCount: raw.reviewCount ?? null,
+    source: computeSource(raw),
+    trustpilotUrl: raw.trustpilotUrl ?? null,
     searchText,
   };
 }

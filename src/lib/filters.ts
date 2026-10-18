@@ -1,5 +1,5 @@
 import { issueTemplateLabel } from "@/lib/issues";
-import type { Lead, LeadStatus } from "@/types/lead";
+import type { Lead, LeadSource, LeadStatus } from "@/types/lead";
 
 export type ScoreBand = "0-30" | "31-50" | "51-70" | "71-89" | "90-100";
 
@@ -15,6 +15,7 @@ export interface LeadFilters {
   statuses: Set<LeadStatus>;
   scoreBands: Set<ScoreBand>;
   cities: Set<string>;
+  sources: Set<LeadSource>;
   issueTemplates: Set<string>;
   search: string;
 }
@@ -24,6 +25,7 @@ export function defaultFilters(): LeadFilters {
     statuses: new Set<LeadStatus>(["POOR", "NEEDS_IMPROVEMENT", "NO_WEBSITE"]),
     scoreBands: new Set(),
     cities: new Set(),
+    sources: new Set(),
     issueTemplates: new Set(),
     search: "",
   };
@@ -35,6 +37,7 @@ export function isDefaultFilters(filters: LeadFilters): boolean {
     setsEqual(filters.statuses, defaults.statuses) &&
     filters.scoreBands.size === 0 &&
     filters.cities.size === 0 &&
+    filters.sources.size === 0 &&
     filters.issueTemplates.size === 0 &&
     filters.search.trim() === ""
   );
@@ -61,6 +64,7 @@ export function applyFilters(leads: Lead[], filters: LeadFilters): Lead[] {
     if (filters.statuses.size > 0 && !filters.statuses.has(lead.status)) return false;
     if (!matchesScoreBand(lead.seoScore, filters.scoreBands)) return false;
     if (filters.cities.size > 0 && !filters.cities.has(lead.city)) return false;
+    if (filters.sources.size > 0 && !filters.sources.has(lead.source)) return false;
 
     if (filters.issueTemplates.size > 0) {
       const templates = lead.issues.map((i) => issueTemplateLabel(i.text));
