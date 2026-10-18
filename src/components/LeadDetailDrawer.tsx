@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 import IssueList from "@/components/IssueList";
 import PriorityBadge from "@/components/PriorityBadge";
+import SourceBadge from "@/components/SourceBadge";
 import StatusBadge from "@/components/StatusBadge";
 import type { Lead } from "@/types/lead";
 
@@ -66,15 +67,27 @@ export default function LeadDetailDrawer({ lead, onClose }: { lead: Lead; onClos
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
-              Open in Google Maps
+              {lead.source === "trustpilot" ? "Search on Google Maps" : "Open in Google Maps"}
               <ExternalIcon />
             </a>
+            {lead.trustpilotUrl && (
+              <a
+                href={lead.trustpilotUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Open on Trustpilot
+                <ExternalIcon />
+              </a>
+            )}
           </div>
 
           <dl className="grid grid-cols-2 gap-4 rounded-lg bg-slate-50 p-4">
             <Detail label="SEO Score" value={lead.seoScore === null ? "Not applicable" : `${lead.seoScore} / 100`} />
             <Detail label="SEO Status" value={<StatusBadge status={lead.status} />} />
             <Detail label="Lead Priority" value={<PriorityBadge priority={lead.priority} />} />
+            <Detail label="Lead Source" value={<SourceBadge source={lead.source} />} />
             {lead.reviewCount !== null ? (
               <Detail label="Google Reviews" value={lead.reviewCount.toLocaleString()} />
             ) : (

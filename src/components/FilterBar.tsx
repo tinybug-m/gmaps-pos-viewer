@@ -2,7 +2,10 @@
 
 import MultiSelectDropdown from "@/components/MultiSelectDropdown";
 import { SCORE_BANDS, defaultFilters, isDefaultFilters, type LeadFilters, type ScoreBand } from "@/lib/filters";
-import type { LeadStatus } from "@/types/lead";
+import { SOURCE_LABELS } from "@/components/SourceBadge";
+import type { LeadSource, LeadStatus } from "@/types/lead";
+
+const SOURCES: LeadSource[] = ["google-maps", "trustpilot"];
 
 const CORE_STATUS_PILLS: { status: LeadStatus; label: string; activeClass: string }[] = [
   { status: "POOR", label: "Poor", activeClass: "bg-red-50 text-red-800" },
@@ -33,6 +36,13 @@ export default function FilterBar({
     if (next.has(band)) next.delete(band);
     else next.add(band);
     onChange({ ...filters, scoreBands: next });
+  }
+
+  function toggleSource(source: LeadSource) {
+    const next = new Set(filters.sources);
+    if (next.has(source)) next.delete(source);
+    else next.add(source);
+    onChange({ ...filters, sources: next });
   }
 
   const showGood = filters.statuses.has("GOOD");
@@ -69,6 +79,24 @@ export default function FilterBar({
           active={showCrawlFailed}
           onClick={() => toggleStatus("CRAWL_FAILED")}
         />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Source</span>
+        {SOURCES.map((source) => (
+          <button
+            key={source}
+            type="button"
+            onClick={() => toggleSource(source)}
+            className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+              filters.sources.has(source)
+                ? "bg-slate-100 text-slate-800"
+                : "bg-white text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
+            }`}
+          >
+            {SOURCE_LABELS[source]}
+          </button>
+        ))}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

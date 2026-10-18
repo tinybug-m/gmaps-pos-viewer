@@ -9,6 +9,7 @@ const COLUMNS: { key: SortKey | null; label: string }[] = [
   { key: "name", label: "Business" },
   { key: "score", label: "SEO Score" },
   { key: "status", label: "Status" },
+  { key: null, label: "Source" },
   { key: null, label: "Main Issues" },
   { key: "responseMs", label: "Performance" },
   { key: null, label: "Website" },

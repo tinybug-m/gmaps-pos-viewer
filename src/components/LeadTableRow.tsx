@@ -1,4 +1,5 @@
 import PriorityBadge from "@/components/PriorityBadge";
+import SourceBadge from "@/components/SourceBadge";
 import StatusBadge from "@/components/StatusBadge";
 import { SEVERITY_ORDER } from "@/lib/issues";
 import type { Lead } from "@/types/lead";
@@ -41,6 +42,9 @@ export default function LeadTableRow({
       </td>
       <td className="whitespace-nowrap px-4 py-3">
         <StatusBadge status={lead.status} />
+      </td>
+      <td className="whitespace-nowrap px-4 py-3">
+        <SourceBadge source={lead.source} />
       </td>
       <td className="px-4 py-3 text-sm text-slate-600">
         {lead.status === "NO_WEBSITE" ? (
