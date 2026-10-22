@@ -10,7 +10,15 @@ import LeadTable from "@/components/LeadTable";
 import SearchBar from "@/components/SearchBar";
 import SummaryCards from "@/components/SummaryCards";
 import { applyFilters, defaultFilters, isDefaultFilters, type LeadFilters } from "@/lib/filters";
-import { buildLeads, getCities, getIssueOptions, getSampleLeads, getSummaryCounts } from "@/lib/leads";
+import {
+  buildLeads,
+  getCities,
+  getIssueOptions,
+  getNiches,
+  getSampleLeads,
+  getSummaryCounts,
+  hasOutreachData,
+} from "@/lib/leads";
 import { DEFAULT_SORT, sortLeads, type SortState } from "@/lib/sort";
 import type { Lead, RawLead } from "@/types/lead";
 
@@ -22,7 +30,11 @@ export default function Dashboard() {
 
   const cities = useMemo(() => getCities(leads), [leads]);
   const issueOptions = useMemo(() => getIssueOptions(leads), [leads]);
+  const niches = useMemo(() => getNiches(leads), [leads]);
   const counts = useMemo(() => getSummaryCounts(leads), [leads]);
+  // Decided from the whole dataset, not the filtered rows, so the Call column
+  // doesn't appear and vanish as filters change.
+  const showOutreach = useMemo(() => hasOutreachData(leads), [leads]);
 
   const [filters, setFilters] = useState<LeadFilters>(defaultFilters);
   const [sort, setSort] = useState<SortState>(DEFAULT_SORT);
@@ -72,7 +84,14 @@ export default function Dashboard() {
             {leads.length} businesses
           </p>
         </div>
-        <FilterBar filters={filters} onChange={setFilters} cities={cities} issueOptions={issueOptions} />
+        <FilterBar
+          filters={filters}
+          onChange={setFilters}
+          cities={cities}
+          issueOptions={issueOptions}
+          niches={niches}
+          showOutreach={showOutreach}
+        />
       </div>
 
       {sorted.length === 0 ? (
@@ -86,7 +105,13 @@ export default function Dashboard() {
           onClear={() => setFilters(defaultFilters())}
         />
       ) : (
-        <LeadTable leads={sorted} sort={sort} onSortChange={setSort} onSelectLead={setSelectedLead} />
+        <LeadTable
+          leads={sorted}
+          sort={sort}
+          onSortChange={setSort}
+          onSelectLead={setSelectedLead}
+          showOutreach={showOutreach}
+        />
       )}
 
       {selectedLead && <LeadDetailDrawer lead={selectedLead} onClose={() => setSelectedLead(null)} />}

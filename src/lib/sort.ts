@@ -7,7 +7,8 @@ export type SortKey =
   | "status"
   | "responseMs"
   | "issueCount"
-  | "priority";
+  | "priority"
+  | "call";
 
 export type SortDirection = "asc" | "desc";
 
@@ -24,6 +25,16 @@ const PRIORITY_RANK: Record<LeadPriority, number> = {
   Low: 2,
   "Manual Review": 3,
 };
+
+// "Should call: YES" first, then by call-list grade (A before B…); leads
+// without outreach data sink to the bottom.
+function callRank(lead: Lead): number {
+  const o = lead.outreach;
+  if (!o) return Number.MAX_SAFE_INTEGER;
+  const callBucket = o.shouldCall === "YES" ? 0 : o.shouldCall === null ? 1 : 2;
+  const grade = o.callPriority ? o.callPriority.charCodeAt(0) : 999;
+  return callBucket * 1000 + grade;
+}
 
 function compareValues(a: Lead, b: Lead, key: SortKey): number {
   switch (key) {
@@ -44,6 +55,8 @@ function compareValues(a: Lead, b: Lead, key: SortKey): number {
       return a.issueCount - b.issueCount;
     case "priority":
       return PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority];
+    case "call":
+      return callRank(a) - callRank(b);
   }
 }
 
@@ -59,6 +72,7 @@ const INITIAL_DIRECTION: Record<SortKey, SortDirection> = {
   issueCount: "desc",
   responseMs: "desc",
   priority: "asc",
+  call: "asc",
   name: "asc",
   city: "asc",
   status: "asc",

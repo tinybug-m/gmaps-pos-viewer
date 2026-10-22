@@ -2,11 +2,12 @@
 
 import { useEffect } from "react";
 
+import CallBadge, { humanize } from "@/components/CallBadge";
 import IssueList from "@/components/IssueList";
 import PriorityBadge from "@/components/PriorityBadge";
 import SourceBadge from "@/components/SourceBadge";
 import StatusBadge from "@/components/StatusBadge";
-import type { Lead } from "@/types/lead";
+import type { Lead, LeadContactPerson, LeadOutreach } from "@/types/lead";
 
 export default function LeadDetailDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }) {
   useEffect(() => {
@@ -30,7 +31,10 @@ export default function LeadDetailDrawer({ lead, onClose }: { lead: Lead; onClos
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
           <div>
             <h2 className="text-lg font-semibold text-slate-800">{lead.name}</h2>
-            <p className="text-sm text-slate-500">{lead.city}</p>
+            <p className="text-sm text-slate-500">
+              {lead.category ? `${lead.category} · ` : ""}
+              {lead.city}
+            </p>
           </div>
           <button
             type="button"
@@ -46,6 +50,15 @@ export default function LeadDetailDrawer({ lead, onClose }: { lead: Lead; onClos
 
         <div className="flex flex-col gap-6 px-6 py-5">
           <div className="flex flex-wrap gap-2">
+            {lead.outreach?.phone && (
+              <a
+                href={`tel:${lead.outreach.phone.replace(/\s+/g, "")}`}
+                className="inline-flex items-center gap-1.5 rounded-md bg-emerald-700 px-3.5 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+              >
+                <PhoneIcon />
+                Call {lead.outreach.phone}
+              </a>
+            )}
             {lead.websiteUrl ? (
               <a
                 href={lead.websiteUrl}
@@ -83,11 +96,30 @@ export default function LeadDetailDrawer({ lead, onClose }: { lead: Lead; onClos
             )}
           </div>
 
+          {lead.outreach && <OutreachSection outreach={lead.outreach} />}
+
           <dl className="grid grid-cols-2 gap-4 rounded-lg bg-slate-50 p-4">
             <Detail label="SEO Score" value={lead.seoScore === null ? "Not applicable" : `${lead.seoScore} / 100`} />
             <Detail label="SEO Status" value={<StatusBadge status={lead.status} />} />
             <Detail label="Lead Priority" value={<PriorityBadge priority={lead.priority} />} />
             <Detail label="Lead Source" value={<SourceBadge source={lead.source} />} />
+            {lead.websiteScore !== null && (
+              <Detail label="Website Score" value={`${lead.websiteScore} / 100`} />
+            )}
+            {lead.websiteIssue && <Detail label="Website Verdict" value={humanize(lead.websiteIssue)} />}
+            {lead.rating !== null && (
+              <Detail
+                label="Google Rating"
+                value={
+                  <>
+                    <span className="text-amber-500" aria-hidden>
+                      ★
+                    </span>{" "}
+                    {lead.rating.toFixed(1)}
+                  </>
+                }
+              />
+            )}
             {lead.reviewCount !== null ? (
               <Detail label="Google Reviews" value={lead.reviewCount.toLocaleString()} />
             ) : (
@@ -96,6 +128,8 @@ export default function LeadDetailDrawer({ lead, onClose }: { lead: Lead; onClos
                 value={lead.responseMs ? `${lead.responseMs.toLocaleString()} ms` : "Not measured"}
               />
             )}
+            {lead.niche && <Detail label="Niche" value={humanize(lead.niche)} />}
+            {lead.branchCount !== null && <Detail label="Branches" value={lead.branchCount} />}
           </dl>
 
           {lead.status === "NO_WEBSITE" && (
@@ -131,6 +165,130 @@ export default function LeadDetailDrawer({ lead, onClose }: { lead: Lead; onClos
         </div>
       </div>
     </div>
+  );
+}
+
+function OutreachSection({ outreach }: { outreach: LeadOutreach }) {
+  const people = [
+    ...(outreach.decisionMaker ? [{ person: outreach.decisionMaker, isDecisionMaker: true }] : []),
+    ...outreach.otherPeople.map((person) => ({ person, isDecisionMaker: false })),
+  ];
+  // A legal-form note mentioning TPS means "check before you dial", so give it
+  // the same callout weight as the crawl-failure notice.
+  const legalNeedsCheck = outreach.legalForm !== null && /\bTPS\b|not checked/i.test(outreach.legalForm);
+
+  return (
+    <section className="flex flex-col gap-4 rounded-lg border border-slate-200 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-slate-800">Outreach</h3>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          <CallBadge outreach={outreach} />
+          {outreach.tier && <span>Tier: {humanize(outreach.tier)}</span>}
+          {outreach.confidence && <span>· {humanize(outreach.confidence)} confidence</span>}
+        </div>
+      </div>
+
+      {outreach.pitchAngle && (
+        <div className="rounded-md bg-slate-50 px-3.5 py-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Pitch angle</p>
+          <p className="mt-1 text-sm text-slate-800">{outreach.pitchAngle}</p>
+        </div>
+      )}
+
+      <dl className="flex flex-col gap-3">
+        {outreach.callNote && <Detail label="Call note" value={outreach.callNote} />}
+        {outreach.askFor && <Detail label="Ask for" value={outreach.askFor} />}
+        {outreach.phone && (
+          <Detail
+            label="Phone"
+            value={
+              <>
+                <a
+                  href={`tel:${outreach.phone.replace(/\s+/g, "")}`}
+                  className="font-medium tabular-nums text-slate-800 hover:underline"
+                >
+                  {outreach.phone}
+                </a>
+                {outreach.phoneOwner && (
+                  <span className="mt-0.5 block text-xs text-slate-500">{outreach.phoneOwner}</span>
+                )}
+              </>
+            }
+          />
+        )}
+        {outreach.emails.length > 0 && (
+          <Detail
+            label={outreach.emails.length === 1 ? "Email" : "Emails"}
+            value={
+              <ul className="space-y-0.5">
+                {outreach.emails.map((email) => (
+                  <li key={email}>
+                    <a href={`mailto:${email}`} className="text-slate-800 hover:underline">
+                      {email}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            }
+          />
+        )}
+        <Detail
+          label="People"
+          value={
+            people.length === 0 ? (
+              <span className="text-slate-400">No named contacts found</span>
+            ) : (
+              <ul className="space-y-1.5">
+                {people.map(({ person, isDecisionMaker }, i) => (
+                  <PersonRow key={`${person.name}-${i}`} person={person} isDecisionMaker={isDecisionMaker} />
+                ))}
+              </ul>
+            )
+          }
+        />
+      </dl>
+
+      {outreach.legalForm && (
+        <p
+          className={`rounded-md px-3.5 py-2.5 text-xs ${
+            legalNeedsCheck ? "bg-amber-50 text-amber-800" : "bg-slate-50 text-slate-600"
+          }`}
+        >
+          <span className="font-semibold">Legal form:</span> {outreach.legalForm}
+        </p>
+      )}
+    </section>
+  );
+}
+
+function PersonRow({ person, isDecisionMaker }: { person: LeadContactPerson; isDecisionMaker: boolean }) {
+  return (
+    <li>
+      <span className="font-medium text-slate-800">{person.name}</span>
+      {person.role && <span className="text-slate-500"> · {person.role}</span>}
+      {isDecisionMaker && (
+        <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+          Decision maker
+        </span>
+      )}
+      {(person.email || person.phone) && (
+        <span className="block text-xs text-slate-500">
+          {[person.phone, person.email].filter(Boolean).join(" · ")}
+        </span>
+      )}
+    </li>
+  );
+}
+
+function PhoneIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z"
+      />
+    </svg>
   );
 }
 

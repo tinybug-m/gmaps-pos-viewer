@@ -4,9 +4,10 @@ import LeadTableRow from "@/components/LeadTableRow";
 import { nextSortState, type SortKey, type SortState } from "@/lib/sort";
 import type { Lead } from "@/types/lead";
 
-const COLUMNS: { key: SortKey | null; label: string }[] = [
+const COLUMNS: { key: SortKey | null; label: string; outreachOnly?: boolean }[] = [
   { key: "priority", label: "Priority" },
   { key: "name", label: "Business" },
+  { key: "call", label: "Call", outreachOnly: true },
   { key: "score", label: "SEO Score" },
   { key: "status", label: "Status" },
   { key: null, label: "Source" },
@@ -21,18 +22,23 @@ export default function LeadTable({
   sort,
   onSortChange,
   onSelectLead,
+  showOutreach,
 }: {
   leads: Lead[];
   sort: SortState;
   onSortChange: (sort: SortState) => void;
   onSelectLead: (lead: Lead) => void;
+  showOutreach: boolean;
 }) {
+  const columns = COLUMNS.filter((col) => showOutreach || !col.outreachOnly);
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-      <table className="w-full min-w-[900px] border-collapse text-left">
+      <table
+        className={`w-full border-collapse text-left ${showOutreach ? "min-w-[1080px]" : "min-w-[900px]"}`}
+      >
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50">
-            {COLUMNS.map((col) => (
+            {columns.map((col) => (
               <th key={col.label} className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
                 {col.key ? (
                   <button
@@ -52,7 +58,12 @@ export default function LeadTable({
         </thead>
         <tbody>
           {leads.map((lead) => (
-            <LeadTableRow key={lead.id} lead={lead} onSelect={() => onSelectLead(lead)} />
+            <LeadTableRow
+              key={lead.id}
+              lead={lead}
+              showOutreach={showOutreach}
+              onSelect={() => onSelectLead(lead)}
+            />
           ))}
         </tbody>
       </table>

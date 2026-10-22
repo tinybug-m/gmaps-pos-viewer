@@ -18,11 +18,15 @@ export default function FilterBar({
   onChange,
   cities,
   issueOptions,
+  niches,
+  showOutreach,
 }: {
   filters: LeadFilters;
   onChange: (filters: LeadFilters) => void;
   cities: string[];
   issueOptions: string[];
+  niches: string[];
+  showOutreach: boolean;
 }) {
   function toggleStatus(status: LeadStatus) {
     const next = new Set(filters.statuses);
@@ -79,6 +83,13 @@ export default function FilterBar({
           active={showCrawlFailed}
           onClick={() => toggleStatus("CRAWL_FAILED")}
         />
+        {showOutreach && (
+          <ToggleChip
+            label="Call-ready only"
+            active={filters.callReadyOnly}
+            onClick={() => onChange({ ...filters, callReadyOnly: !filters.callReadyOnly })}
+          />
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -125,6 +136,14 @@ export default function FilterBar({
           selected={filters.cities}
           onChange={(next) => onChange({ ...filters, cities: next })}
         />
+        {niches.length > 0 && (
+          <MultiSelectDropdown
+            label="Niche"
+            options={niches}
+            selected={filters.niches}
+            onChange={(next) => onChange({ ...filters, niches: next })}
+          />
+        )}
         <MultiSelectDropdown
           label="Issues"
           options={issueOptions}

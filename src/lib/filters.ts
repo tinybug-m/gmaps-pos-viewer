@@ -17,6 +17,9 @@ export interface LeadFilters {
   cities: Set<string>;
   sources: Set<LeadSource>;
   issueTemplates: Set<string>;
+  niches: Set<string>;
+  /** Only leads the enriched export marked `shouldCall: "YES"`. */
+  callReadyOnly: boolean;
   search: string;
 }
 
@@ -27,6 +30,8 @@ export function defaultFilters(): LeadFilters {
     cities: new Set(),
     sources: new Set(),
     issueTemplates: new Set(),
+    niches: new Set(),
+    callReadyOnly: false,
     search: "",
   };
 }
@@ -39,6 +44,8 @@ export function isDefaultFilters(filters: LeadFilters): boolean {
     filters.cities.size === 0 &&
     filters.sources.size === 0 &&
     filters.issueTemplates.size === 0 &&
+    filters.niches.size === 0 &&
+    !filters.callReadyOnly &&
     filters.search.trim() === ""
   );
 }
@@ -65,6 +72,8 @@ export function applyFilters(leads: Lead[], filters: LeadFilters): Lead[] {
     if (!matchesScoreBand(lead.seoScore, filters.scoreBands)) return false;
     if (filters.cities.size > 0 && !filters.cities.has(lead.city)) return false;
     if (filters.sources.size > 0 && !filters.sources.has(lead.source)) return false;
+    if (filters.niches.size > 0 && (lead.niche === null || !filters.niches.has(lead.niche))) return false;
+    if (filters.callReadyOnly && lead.outreach?.shouldCall !== "YES") return false;
 
     if (filters.issueTemplates.size > 0) {
       const templates = lead.issues.map((i) => issueTemplateLabel(i.text));

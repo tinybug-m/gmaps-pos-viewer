@@ -1,3 +1,4 @@
+import CallBadge from "@/components/CallBadge";
 import PriorityBadge from "@/components/PriorityBadge";
 import SourceBadge from "@/components/SourceBadge";
 import StatusBadge from "@/components/StatusBadge";
@@ -6,9 +7,11 @@ import type { Lead } from "@/types/lead";
 
 export default function LeadTableRow({
   lead,
+  showOutreach,
   onSelect,
 }: {
   lead: Lead;
+  showOutreach: boolean;
   onSelect: () => void;
 }) {
   const sortedIssues = [...lead.issues].sort(
@@ -26,10 +29,43 @@ export default function LeadTableRow({
       <td className="whitespace-nowrap px-4 py-3">
         <PriorityBadge priority={lead.priority} />
       </td>
-      <td className="px-4 py-3">
+      <td className="min-w-48 px-4 py-3">
         <p className="font-medium text-slate-800">{lead.name}</p>
-        <p className="text-xs text-slate-400">{lead.city}</p>
+        <p className="text-xs text-slate-400">
+          {lead.category ? `${lead.category} · ` : ""}
+          {lead.city}
+        </p>
+        {lead.rating !== null && (
+          <p className="text-xs text-slate-500">
+            <span className="text-amber-500" aria-hidden>
+              ★
+            </span>{" "}
+            <span className="tabular-nums">{lead.rating.toFixed(1)}</span>
+            {lead.reviewCount !== null && (
+              <span className="text-slate-400"> ({lead.reviewCount.toLocaleString()})</span>
+            )}
+          </p>
+        )}
       </td>
+      {showOutreach && (
+        <td className="whitespace-nowrap px-4 py-3" onClick={(e) => e.stopPropagation()}>
+          {lead.outreach ? (
+            <div className="flex flex-col items-start gap-1">
+              <CallBadge outreach={lead.outreach} />
+              {lead.outreach.phone && (
+                <a
+                  href={`tel:${lead.outreach.phone.replace(/\s+/g, "")}`}
+                  className="text-xs font-medium tabular-nums text-slate-600 hover:text-slate-800"
+                >
+                  {lead.outreach.phone}
+                </a>
+              )}
+            </div>
+          ) : (
+            <span className="text-slate-400">—</span>
+          )}
+        </td>
+      )}
       <td className="whitespace-nowrap px-4 py-3">
         {lead.seoScore === null ? (
           <span className="text-slate-400">—</span>
@@ -49,10 +85,13 @@ export default function LeadTableRow({
       <td className="px-4 py-3 text-sm text-slate-600">
         {lead.status === "NO_WEBSITE" ? (
           <span className="italic text-teal-800">
-            No website found{lead.reviewCount !== null ? ` — ${lead.reviewCount} Google reviews` : ""}
+            No website found
+            {lead.reviewCount !== null && lead.rating === null ? ` — ${lead.reviewCount} Google reviews` : ""}
           </span>
         ) : lead.crawlFailed ? (
           <span className="italic text-sky-700">Site could not be crawled — manual review</span>
+        ) : lead.outreach?.pitchAngle && primaryIssues.length === 0 ? (
+          <span className="text-slate-600">{lead.outreach.pitchAngle}</span>
         ) : primaryIssues.length === 0 ? (
           <span className="text-slate-400">No issues detected</span>
         ) : (
