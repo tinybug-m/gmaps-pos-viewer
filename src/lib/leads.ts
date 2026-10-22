@@ -45,6 +45,30 @@ function computeSource(raw: RawLead): LeadSource {
   return raw.trustpilotUrl ? "trustpilot" : "google-maps";
 }
 
+function enrichedFields(raw: RawLead) {
+  return {
+    category: raw.category ?? null,
+    niche: raw.niche ?? null,
+    rating: raw.rating ?? null,
+    branchCount: raw.branchCount ?? null,
+    websiteScore: raw.websiteScore ?? null,
+    websiteIssue: raw.websiteIssue ?? null,
+    outreach: raw.outreach ?? null,
+  };
+}
+
+function enrichedSearchTerms(raw: RawLead): string[] {
+  const o = raw.outreach;
+  return [
+    raw.category,
+    raw.niche,
+    o?.phone,
+    ...(o?.emails ?? []),
+    o?.decisionMaker?.name,
+    ...(o?.otherPeople.map((p) => p.name) ?? []),
+  ].filter((t): t is string => typeof t === "string");
+}
+
 function buildLead(raw: RawLead, index: number): Lead {
   const hasWebsite = typeof raw.websiteUrl === "string" && raw.websiteUrl.trim() !== "";
 
@@ -52,7 +76,9 @@ function buildLead(raw: RawLead, index: number): Lead {
   // its own lead category, and the strongest one: a "build" pitch rather
   // than a "fix" pitch.
   if (!hasWebsite) {
-    const searchText = [raw.name, raw.city, "no website"].join(" ").toLowerCase();
+    const searchText = [raw.name, raw.city, "no website", ...enrichedSearchTerms(raw)]
+      .join(" ")
+      .toLowerCase();
     return {
       id: slugify(raw.name, index),
       name: raw.name,
@@ -69,6 +95,7 @@ function buildLead(raw: RawLead, index: number): Lead {
       reviewCount: raw.reviewCount ?? null,
       source: computeSource(raw),
       trustpilotUrl: raw.trustpilotUrl ?? null,
+      ...enrichedFields(raw),
       searchText,
     };
   }
@@ -87,7 +114,7 @@ function buildLead(raw: RawLead, index: number): Lead {
   const status = computeStatus(raw, crawlFailed);
   const priority = computePriority(nonCrawlIssues, crawlFailed);
 
-  const searchText = [raw.name, raw.city, raw.websiteUrl, ...rawIssues]
+  const searchText = [raw.name, raw.city, raw.websiteUrl, ...rawIssues, ...enrichedSearchTerms(raw)]
     .join(" ")
     .toLowerCase();
 
@@ -107,6 +134,7 @@ function buildLead(raw: RawLead, index: number): Lead {
     reviewCount: raw.reviewCount ?? null,
     source: computeSource(raw),
     trustpilotUrl: raw.trustpilotUrl ?? null,
+    ...enrichedFields(raw),
     searchText,
   };
 }
@@ -154,6 +182,16 @@ export function getSummaryCounts(leads: Lead[]): SummaryCounts {
 
 export function getCities(leads: Lead[]): string[] {
   return Array.from(new Set(leads.map((l) => l.city))).sort();
+}
+
+export function getNiches(leads: Lead[]): string[] {
+  return Array.from(
+    new Set(leads.map((l) => l.niche).filter((n): n is string => n !== null))
+  ).sort();
+}
+
+export function hasOutreachData(leads: Lead[]): boolean {
+  return leads.some((l) => l.outreach !== null);
 }
 
 export function getIssueOptions(leads: Lead[]): string[] {

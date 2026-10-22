@@ -17,6 +17,40 @@ export interface RawLead {
   /** Explicit origin of the lead. When omitted it is inferred: a `trustpilotUrl` means Trustpilot, otherwise Google Maps. */
   source?: LeadSource;
   trustpilotUrl?: string;
+  /** Business profile and outreach fields from the enriched "call sheet" export. All optional. */
+  category?: string;
+  niche?: string;
+  rating?: number;
+  branchCount?: number;
+  websiteScore?: number;
+  websiteIssue?: string;
+  outreach?: LeadOutreach;
+}
+
+export interface LeadContactPerson {
+  name: string;
+  role: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
+/** Who to call and what to say, from the enriched export. Free-text values are passed through as-is. */
+export interface LeadOutreach {
+  phone: string | null;
+  phoneOwner: string | null;
+  emails: string[];
+  /** e.g. "YES" / "NO". */
+  shouldCall: string | null;
+  /** Call-list grade, e.g. "A" / "B" / "C". */
+  callPriority: string | null;
+  tier: string | null;
+  confidence: string | null;
+  pitchAngle: string | null;
+  callNote: string | null;
+  askFor: string | null;
+  decisionMaker: LeadContactPerson | null;
+  otherPeople: LeadContactPerson[];
+  legalForm: string | null;
 }
 
 export type IssueSeverity = "critical" | "important" | "optimization" | "crawl";
@@ -51,5 +85,12 @@ export interface Lead {
   reviewCount: number | null;
   source: LeadSource;
   trustpilotUrl: string | null;
+  category: string | null;
+  niche: string | null;
+  rating: number | null;
+  branchCount: number | null;
+  websiteScore: number | null;
+  websiteIssue: string | null;
+  outreach: LeadOutreach | null;
   searchText: string;
 }
