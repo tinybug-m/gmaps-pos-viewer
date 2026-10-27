@@ -1,0 +1,1972 @@
+{
+  "id": "e51d1d99-387c-43c0-947e-639ea1d66f22",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.accounts": {
+      "name": "accounts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_id": {
+          "name": "provider_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "access_token": {
+          "name": "access_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refresh_token": {
+          "name": "refresh_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_token": {
+          "name": "id_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "access_token_expires_at": {
+          "name": "access_token_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refresh_token_expires_at": {
+          "name": "refresh_token_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "accounts_provider_account_uq": {
+          "name": "accounts_provider_account_uq",
+          "columns": [
+            {
+              "expression": "provider_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "accounts_user_idx": {
+          "name": "accounts_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "accounts_user_id_users_id_fk": {
+          "name": "accounts_user_id_users_id_fk",
+          "tableFrom": "accounts",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.audit_log": {
+      "name": "audit_log",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "audit_log_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_type": {
+          "name": "entity_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_id": {
+          "name": "entity_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "before": {
+          "name": "before",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "after": {
+          "name": "after",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ip": {
+          "name": "ip",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "audit_log_entity_idx": {
+          "name": "audit_log_entity_idx",
+          "columns": [
+            {
+              "expression": "entity_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "entity_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "audit_log_action_idx": {
+          "name": "audit_log_action_idx",
+          "columns": [
+            {
+              "expression": "action",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "audit_log_actor_idx": {
+          "name": "audit_log_actor_idx",
+          "columns": [
+            {
+              "expression": "actor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "audit_log_actor_id_users_id_fk": {
+          "name": "audit_log_actor_id_users_id_fk",
+          "tableFrom": "audit_log",
+          "tableTo": "users",
+          "columnsFrom": [
+            "actor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.call_logs": {
+      "name": "call_logs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "lead_id": {
+          "name": "lead_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "call_outcome",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status_before": {
+          "name": "status_before",
+          "type": "pipeline_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status_after": {
+          "name": "status_after",
+          "type": "pipeline_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "duration_sec": {
+          "name": "duration_sec",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "called_at": {
+          "name": "called_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "voided_at": {
+          "name": "voided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "voided_by": {
+          "name": "voided_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "void_reason": {
+          "name": "void_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "call_logs_lead_idx": {
+          "name": "call_logs_lead_idx",
+          "columns": [
+            {
+              "expression": "lead_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "called_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "call_logs_user_idx": {
+          "name": "call_logs_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "called_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "call_logs_lead_id_leads_id_fk": {
+          "name": "call_logs_lead_id_leads_id_fk",
+          "tableFrom": "call_logs",
+          "tableTo": "leads",
+          "columnsFrom": [
+            "lead_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "call_logs_user_id_users_id_fk": {
+          "name": "call_logs_user_id_users_id_fk",
+          "tableFrom": "call_logs",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "call_logs_voided_by_users_id_fk": {
+          "name": "call_logs_voided_by_users_id_fk",
+          "tableFrom": "call_logs",
+          "tableTo": "users",
+          "columnsFrom": [
+            "voided_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "call_logs_duration_range": {
+          "name": "call_logs_duration_range",
+          "value": "\"call_logs\".\"duration_sec\" is null or \"call_logs\".\"duration_sec\" between 0 and 14400"
+        },
+        "call_logs_notes_length": {
+          "name": "call_logs_notes_length",
+          "value": "\"call_logs\".\"notes\" is null or char_length(\"call_logs\".\"notes\") <= 5000"
+        },
+        "call_logs_void_complete": {
+          "name": "call_logs_void_complete",
+          "value": "(\"call_logs\".\"voided_at\" is null and \"call_logs\".\"voided_by\" is null and \"call_logs\".\"void_reason\" is null) or (\"call_logs\".\"voided_at\" is not null and \"call_logs\".\"voided_by\" is not null and \"call_logs\".\"void_reason\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.follow_ups": {
+      "name": "follow_ups",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "lead_id": {
+          "name": "lead_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "due_at": {
+          "name": "due_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_by": {
+          "name": "completed_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_by_call_id": {
+          "name": "completed_by_call_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancelled_at": {
+          "name": "cancelled_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancelled_by": {
+          "name": "cancelled_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "follow_ups_one_open_uq": {
+          "name": "follow_ups_one_open_uq",
+          "columns": [
+            {
+              "expression": "lead_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"follow_ups\".\"completed_at\" is null and \"follow_ups\".\"cancelled_at\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "follow_ups_open_due_idx": {
+          "name": "follow_ups_open_due_idx",
+          "columns": [
+            {
+              "expression": "due_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"follow_ups\".\"completed_at\" is null and \"follow_ups\".\"cancelled_at\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "follow_ups_lead_idx": {
+          "name": "follow_ups_lead_idx",
+          "columns": [
+            {
+              "expression": "lead_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "follow_ups_lead_id_leads_id_fk": {
+          "name": "follow_ups_lead_id_leads_id_fk",
+          "tableFrom": "follow_ups",
+          "tableTo": "leads",
+          "columnsFrom": [
+            "lead_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "follow_ups_created_by_users_id_fk": {
+          "name": "follow_ups_created_by_users_id_fk",
+          "tableFrom": "follow_ups",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "follow_ups_completed_by_users_id_fk": {
+          "name": "follow_ups_completed_by_users_id_fk",
+          "tableFrom": "follow_ups",
+          "tableTo": "users",
+          "columnsFrom": [
+            "completed_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "follow_ups_completed_by_call_id_call_logs_id_fk": {
+          "name": "follow_ups_completed_by_call_id_call_logs_id_fk",
+          "tableFrom": "follow_ups",
+          "tableTo": "call_logs",
+          "columnsFrom": [
+            "completed_by_call_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "follow_ups_cancelled_by_users_id_fk": {
+          "name": "follow_ups_cancelled_by_users_id_fk",
+          "tableFrom": "follow_ups",
+          "tableTo": "users",
+          "columnsFrom": [
+            "cancelled_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "follow_ups_not_both_closed": {
+          "name": "follow_ups_not_both_closed",
+          "value": "\"follow_ups\".\"completed_at\" is null or \"follow_ups\".\"cancelled_at\" is null"
+        },
+        "follow_ups_complete_pair": {
+          "name": "follow_ups_complete_pair",
+          "value": "(\"follow_ups\".\"completed_at\" is null) = (\"follow_ups\".\"completed_by\" is null)"
+        },
+        "follow_ups_cancel_pair": {
+          "name": "follow_ups_cancel_pair",
+          "value": "(\"follow_ups\".\"cancelled_at\" is null) = (\"follow_ups\".\"cancelled_by\" is null)"
+        },
+        "follow_ups_note_length": {
+          "name": "follow_ups_note_length",
+          "value": "\"follow_ups\".\"note\" is null or char_length(\"follow_ups\".\"note\") <= 5000"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.import_batches": {
+      "name": "import_batches",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "imported_by": {
+          "name": "imported_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_name": {
+          "name": "file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total": {
+          "name": "total",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "inserted": {
+          "name": "inserted",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated": {
+          "name": "updated",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unchanged": {
+          "name": "unchanged",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "invalid": {
+          "name": "invalid",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "duplicates": {
+          "name": "duplicates",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "import_batches_imported_by_users_id_fk": {
+          "name": "import_batches_imported_by_users_id_fk",
+          "tableFrom": "import_batches",
+          "tableTo": "users",
+          "columnsFrom": [
+            "imported_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.lead_assignments": {
+      "name": "lead_assignments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "lead_id": {
+          "name": "lead_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assigned_to": {
+          "name": "assigned_to",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assigned_by": {
+          "name": "assigned_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "ended_at": {
+          "name": "ended_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ended_by": {
+          "name": "ended_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "lead_assignments_one_active_uq": {
+          "name": "lead_assignments_one_active_uq",
+          "columns": [
+            {
+              "expression": "lead_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"lead_assignments\".\"ended_at\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "lead_assignments_lead_idx": {
+          "name": "lead_assignments_lead_idx",
+          "columns": [
+            {
+              "expression": "lead_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "started_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "lead_assignments_user_idx": {
+          "name": "lead_assignments_user_idx",
+          "columns": [
+            {
+              "expression": "assigned_to",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "started_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "lead_assignments_lead_id_leads_id_fk": {
+          "name": "lead_assignments_lead_id_leads_id_fk",
+          "tableFrom": "lead_assignments",
+          "tableTo": "leads",
+          "columnsFrom": [
+            "lead_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "lead_assignments_assigned_to_users_id_fk": {
+          "name": "lead_assignments_assigned_to_users_id_fk",
+          "tableFrom": "lead_assignments",
+          "tableTo": "users",
+          "columnsFrom": [
+            "assigned_to"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "lead_assignments_assigned_by_users_id_fk": {
+          "name": "lead_assignments_assigned_by_users_id_fk",
+          "tableFrom": "lead_assignments",
+          "tableTo": "users",
+          "columnsFrom": [
+            "assigned_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "lead_assignments_ended_by_users_id_fk": {
+          "name": "lead_assignments_ended_by_users_id_fk",
+          "tableFrom": "lead_assignments",
+          "tableTo": "users",
+          "columnsFrom": [
+            "ended_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "lead_assignments_end_pair": {
+          "name": "lead_assignments_end_pair",
+          "value": "(\"lead_assignments\".\"ended_at\" is null) = (\"lead_assignments\".\"ended_by\" is null)"
+        },
+        "lead_assignments_end_after_start": {
+          "name": "lead_assignments_end_after_start",
+          "value": "\"lead_assignments\".\"ended_at\" is null or \"lead_assignments\".\"ended_at\" >= \"lead_assignments\".\"started_at\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.lead_notes": {
+      "name": "lead_notes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "lead_id": {
+          "name": "lead_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_id": {
+          "name": "author_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "note_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'note'"
+        },
+        "about_user_id": {
+          "name": "about_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "call_log_id": {
+          "name": "call_log_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "voided_at": {
+          "name": "voided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "voided_by": {
+          "name": "voided_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "void_reason": {
+          "name": "void_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "lead_notes_lead_idx": {
+          "name": "lead_notes_lead_idx",
+          "columns": [
+            {
+              "expression": "lead_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "lead_notes_author_idx": {
+          "name": "lead_notes_author_idx",
+          "columns": [
+            {
+              "expression": "author_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "lead_notes_lead_id_leads_id_fk": {
+          "name": "lead_notes_lead_id_leads_id_fk",
+          "tableFrom": "lead_notes",
+          "tableTo": "leads",
+          "columnsFrom": [
+            "lead_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "lead_notes_author_id_users_id_fk": {
+          "name": "lead_notes_author_id_users_id_fk",
+          "tableFrom": "lead_notes",
+          "tableTo": "users",
+          "columnsFrom": [
+            "author_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "lead_notes_about_user_id_users_id_fk": {
+          "name": "lead_notes_about_user_id_users_id_fk",
+          "tableFrom": "lead_notes",
+          "tableTo": "users",
+          "columnsFrom": [
+            "about_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "lead_notes_call_log_id_call_logs_id_fk": {
+          "name": "lead_notes_call_log_id_call_logs_id_fk",
+          "tableFrom": "lead_notes",
+          "tableTo": "call_logs",
+          "columnsFrom": [
+            "call_log_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "lead_notes_voided_by_users_id_fk": {
+          "name": "lead_notes_voided_by_users_id_fk",
+          "tableFrom": "lead_notes",
+          "tableTo": "users",
+          "columnsFrom": [
+            "voided_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "lead_notes_body_length": {
+          "name": "lead_notes_body_length",
+          "value": "char_length(\"lead_notes\".\"body\") between 1 and 5000"
+        },
+        "lead_notes_about_only_feedback": {
+          "name": "lead_notes_about_only_feedback",
+          "value": "\"lead_notes\".\"about_user_id\" is null or \"lead_notes\".\"kind\" = 'feedback'"
+        },
+        "lead_notes_void_complete": {
+          "name": "lead_notes_void_complete",
+          "value": "(\"lead_notes\".\"voided_at\" is null and \"lead_notes\".\"voided_by\" is null and \"lead_notes\".\"void_reason\" is null) or (\"lead_notes\".\"voided_at\" is not null and \"lead_notes\".\"voided_by\" is not null and \"lead_notes\".\"void_reason\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.lead_status_changes": {
+      "name": "lead_status_changes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "lead_id": {
+          "name": "lead_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "from_status": {
+          "name": "from_status",
+          "type": "pipeline_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "to_status": {
+          "name": "to_status",
+          "type": "pipeline_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "changed_by": {
+          "name": "changed_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "call_log_id": {
+          "name": "call_log_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "lead_status_changes_lead_idx": {
+          "name": "lead_status_changes_lead_idx",
+          "columns": [
+            {
+              "expression": "lead_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "lead_status_changes_user_idx": {
+          "name": "lead_status_changes_user_idx",
+          "columns": [
+            {
+              "expression": "changed_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "lead_status_changes_lead_id_leads_id_fk": {
+          "name": "lead_status_changes_lead_id_leads_id_fk",
+          "tableFrom": "lead_status_changes",
+          "tableTo": "leads",
+          "columnsFrom": [
+            "lead_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "lead_status_changes_changed_by_users_id_fk": {
+          "name": "lead_status_changes_changed_by_users_id_fk",
+          "tableFrom": "lead_status_changes",
+          "tableTo": "users",
+          "columnsFrom": [
+            "changed_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "lead_status_changes_call_log_id_call_logs_id_fk": {
+          "name": "lead_status_changes_call_log_id_call_logs_id_fk",
+          "tableFrom": "lead_status_changes",
+          "tableTo": "call_logs",
+          "columnsFrom": [
+            "call_log_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "lead_status_changes_differs": {
+          "name": "lead_status_changes_differs",
+          "value": "\"lead_status_changes\".\"from_status\" <> \"lead_status_changes\".\"to_status\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.leads": {
+      "name": "leads",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "dedupe_key": {
+          "name": "dedupe_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "legacy_slug": {
+          "name": "legacy_slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "raw": {
+          "name": "raw",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "city": {
+          "name": "city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pipeline_status": {
+          "name": "pipeline_status",
+          "type": "pipeline_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'new'"
+        },
+        "assigned_to": {
+          "name": "assigned_to",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assigned_at": {
+          "name": "assigned_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attempt_count": {
+          "name": "attempt_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_call_at": {
+          "name": "last_call_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_outcome": {
+          "name": "last_outcome",
+          "type": "call_outcome",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "review_requested_at": {
+          "name": "review_requested_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "first_import_id": {
+          "name": "first_import_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_import_id": {
+          "name": "last_import_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_by": {
+          "name": "archived_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "leads_assignee_status_idx": {
+          "name": "leads_assignee_status_idx",
+          "columns": [
+            {
+              "expression": "assigned_to",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "pipeline_status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "leads_status_idx": {
+          "name": "leads_status_idx",
+          "columns": [
+            {
+              "expression": "pipeline_status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "leads_review_idx": {
+          "name": "leads_review_idx",
+          "columns": [
+            {
+              "expression": "review_requested_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"leads\".\"review_requested_at\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "leads_assigned_to_users_id_fk": {
+          "name": "leads_assigned_to_users_id_fk",
+          "tableFrom": "leads",
+          "tableTo": "users",
+          "columnsFrom": [
+            "assigned_to"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "leads_first_import_id_import_batches_id_fk": {
+          "name": "leads_first_import_id_import_batches_id_fk",
+          "tableFrom": "leads",
+          "tableTo": "import_batches",
+          "columnsFrom": [
+            "first_import_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "leads_last_import_id_import_batches_id_fk": {
+          "name": "leads_last_import_id_import_batches_id_fk",
+          "tableFrom": "leads",
+          "tableTo": "import_batches",
+          "columnsFrom": [
+            "last_import_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "leads_archived_by_users_id_fk": {
+          "name": "leads_archived_by_users_id_fk",
+          "tableFrom": "leads",
+          "tableTo": "users",
+          "columnsFrom": [
+            "archived_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "leads_dedupe_key_unique": {
+          "name": "leads_dedupe_key_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dedupe_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "leads_assignment_pair": {
+          "name": "leads_assignment_pair",
+          "value": "(\"leads\".\"assigned_to\" is null) = (\"leads\".\"assigned_at\" is null)"
+        },
+        "leads_archive_pair": {
+          "name": "leads_archive_pair",
+          "value": "(\"leads\".\"archived_at\" is null) = (\"leads\".\"archived_by\" is null)"
+        },
+        "leads_attempts_nonneg": {
+          "name": "leads_attempts_nonneg",
+          "value": "\"leads\".\"attempt_count\" >= 0"
+        },
+        "leads_version_positive": {
+          "name": "leads_version_positive",
+          "value": "\"leads\".\"version\" >= 1"
+        },
+        "leads_source_known": {
+          "name": "leads_source_known",
+          "value": "\"leads\".\"source\" in ('google-maps', 'trustpilot')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.sessions": {
+      "name": "sessions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ip_address": {
+          "name": "ip_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "sessions_user_idx": {
+          "name": "sessions_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "sessions_user_id_users_id_fk": {
+          "name": "sessions_user_id_users_id_fk",
+          "tableFrom": "sessions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "sessions_token_unique": {
+          "name": "sessions_token_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email_verified": {
+          "name": "email_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "image": {
+          "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "role": {
+          "name": "role",
+          "type": "user_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'caller'"
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "must_change_password": {
+          "name": "must_change_password",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "failed_logins": {
+          "name": "failed_logins",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "locked_until": {
+          "name": "locked_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deactivated_at": {
+          "name": "deactivated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_email_unique": {
+          "name": "users_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "users_email_lowercase": {
+          "name": "users_email_lowercase",
+          "value": "\"users\".\"email\" = lower(\"users\".\"email\")"
+        },
+        "users_failed_logins_nonneg": {
+          "name": "users_failed_logins_nonneg",
+          "value": "\"users\".\"failed_logins\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.verifications": {
+      "name": "verifications",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "identifier": {
+          "name": "identifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "verifications_identifier_idx": {
+          "name": "verifications_identifier_idx",
+          "columns": [
+            {
+              "expression": "identifier",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.call_outcome": {
+      "name": "call_outcome",
+      "schema": "public",
+      "values": [
+        "no_answer",
+        "busy",
+        "voicemail",
+        "gatekeeper",
+        "callback_requested",
+        "interested",
+        "not_interested",
+        "wrong_number",
+        "do_not_call"
+      ]
+    },
+    "public.note_kind": {
+      "name": "note_kind",
+      "schema": "public",
+      "values": [
+        "note",
+        "feedback"
+      ]
+    },
+    "public.pipeline_status": {
+      "name": "pipeline_status",
+      "schema": "public",
+      "values": [
+        "new",
+        "in_progress",
+        "callback",
+        "interested",
+        "closed_won",
+        "closed_lost",
+        "invalid",
+        "do_not_call"
+      ]
+    },
+    "public.user_role": {
+      "name": "user_role",
+      "schema": "public",
+      "values": [
+        "admin",
+        "supervisor",
+        "caller"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
