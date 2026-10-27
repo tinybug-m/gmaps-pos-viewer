@@ -145,13 +145,16 @@ export async function updateUser(
   return db.transaction(async (tx) => {
     // Lock the active admins first, in a fixed order, so two admins demoting
     // each other at once can't both succeed (or deadlock).
+    // NO KEY UPDATE, not UPDATE: these rows' keys never change, and a full UPDATE
+    // lock would also block foreign-key checks (e.g. an assignment made by this
+    // admin) and deadlock against assignLeads.
     const admins = await tx
       .select({ id: users.id })
       .from(users)
       .where(and(eq(users.role, "admin"), eq(users.isActive, true)))
       .orderBy(asc(users.id))
-      .for("update");
-    const [before] = await tx.select(userColumns).from(users).where(eq(users.id, userId)).for("update");
+      .for("no key update");
+    const [before] = await tx.select(userColumns).from(users).where(eq(users.id, userId)).for("no key update");
     if (!before) return fail("not_found", "That user doesn't exist.");
 
     const roleChanged = role !== undefined && role !== before.role;
@@ -215,7 +218,7 @@ export async function resetUserPassword(
   const hash = await hashPassword(tempPassword);
 
   return db.transaction(async (tx) => {
-    const [target] = await tx.select({ id: users.id }).from(users).where(eq(users.id, userId)).for("update");
+    const [target] = await tx.select({ id: users.id }).from(users).where(eq(users.id, userId)).for("no key update");
     if (!target) return fail("not_found", "That user doesn't exist.");
     await tx
       .update(users)
