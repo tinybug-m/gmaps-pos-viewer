@@ -1,4 +1,3 @@
-import { getRawLeads } from "@/data/source";
 import { extractResponseMs, issueTemplateLabel, parseIssue } from "@/lib/issues";
 import type {
   Lead,
@@ -9,7 +8,12 @@ import type {
   RawLead,
 } from "@/types/lead";
 
-function slugify(name: string, index: number): string {
+/**
+ * The id the old JSON-only viewer gave a lead: its slugified name plus its
+ * position in the file. It changes when the file is reordered, so it's only
+ * kept on import for traceability and used as a throwaway id in previews.
+ */
+export function legacySlug(name: string, index: number): string {
   const base = name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -40,7 +44,8 @@ function computePriority(issues: ParsedIssue[], crawlFailed: boolean): LeadPrior
   return "Medium";
 }
 
-function computeSource(raw: RawLead): LeadSource {
+/** Where a lead came from: the explicit `source`, or inferred from a Trustpilot URL. */
+export function computeSource(raw: RawLead): LeadSource {
   if (raw.source) return raw.source;
   return raw.trustpilotUrl ? "trustpilot" : "google-maps";
 }
@@ -69,7 +74,8 @@ function enrichedSearchTerms(raw: RawLead): string[] {
   ].filter((t): t is string => typeof t === "string");
 }
 
-function buildLead(raw: RawLead, index: number): Lead {
+/** The display model for one validated record. `id` is the lead's database id. */
+export function buildLead(raw: RawLead, id: string): Lead {
   const hasWebsite = typeof raw.websiteUrl === "string" && raw.websiteUrl.trim() !== "";
 
   // A business with no website at all isn't a crawl result to grade — it's
@@ -80,7 +86,7 @@ function buildLead(raw: RawLead, index: number): Lead {
       .join(" ")
       .toLowerCase();
     return {
-      id: slugify(raw.name, index),
+      id,
       name: raw.name,
       mapsUrl: raw.mapsUrl,
       websiteUrl: null,
@@ -119,7 +125,7 @@ function buildLead(raw: RawLead, index: number): Lead {
     .toLowerCase();
 
   return {
-    id: slugify(raw.name, index),
+    id,
     name: raw.name,
     mapsUrl: raw.mapsUrl,
     websiteUrl: raw.websiteUrl as string,
@@ -139,17 +145,9 @@ function buildLead(raw: RawLead, index: number): Lead {
   };
 }
 
+/** Leads for a file that hasn't been imported yet, with position-based ids. */
 export function buildLeads(rawLeads: RawLead[]): Lead[] {
-  return rawLeads.map(buildLead);
-}
-
-let cachedSampleLeads: Lead[] | null = null;
-
-export function getSampleLeads(): Lead[] {
-  if (!cachedSampleLeads) {
-    cachedSampleLeads = buildLeads(getRawLeads());
-  }
-  return cachedSampleLeads;
+  return rawLeads.map((raw, index) => buildLead(raw, legacySlug(raw.name, index)));
 }
 
 export interface SummaryCounts {

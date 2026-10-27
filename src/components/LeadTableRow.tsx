@@ -1,19 +1,30 @@
 import CallBadge from "@/components/CallBadge";
+import FollowUpBadge from "@/components/FollowUpBadge";
+import PipelineBadge from "@/components/PipelineBadge";
 import PriorityBadge from "@/components/PriorityBadge";
 import SourceBadge from "@/components/SourceBadge";
 import StatusBadge from "@/components/StatusBadge";
 import { SEVERITY_ORDER } from "@/lib/issues";
-import type { Lead } from "@/types/lead";
+import { OUTCOME_LABEL } from "@/lib/workflow";
+import type { TeamLead } from "@/types/lead";
 
 export default function LeadTableRow({
   lead,
   showOutreach,
+  showAssignee,
   onSelect,
+  selected,
+  onToggleSelected,
 }: {
-  lead: Lead;
+  lead: TeamLead;
   showOutreach: boolean;
+  showAssignee: boolean;
   onSelect: () => void;
+  /** Only passed when the table is selectable. */
+  selected?: boolean;
+  onToggleSelected?: () => void;
 }) {
+  const w = lead.workflow;
   const sortedIssues = [...lead.issues].sort(
     (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
   );
@@ -24,16 +35,40 @@ export default function LeadTableRow({
   return (
     <tr
       onClick={onSelect}
-      className="cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50"
+      className={`cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50 ${selected ? "bg-sky-50/60" : ""}`}
     >
+      {onToggleSelected && (
+        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            aria-label={`Select ${lead.name}`}
+            checked={selected ?? false}
+            onChange={onToggleSelected}
+            className="h-4 w-4 rounded border-slate-300 accent-slate-800"
+          />
+        </td>
+      )}
       <td className="whitespace-nowrap px-4 py-3">
         <PriorityBadge priority={lead.priority} />
       </td>
       <td className="min-w-48 px-4 py-3">
-        <p className="font-medium text-slate-800">{lead.name}</p>
-        <p className="text-xs text-slate-400">
-          {lead.category ? `${lead.category} · ` : ""}
-          {lead.city}
+        {/* A real button so keyboard users can open the details too; the row click is a shortcut. */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect();
+          }}
+          className="text-left font-medium text-slate-800 hover:underline"
+        >
+          {lead.name}
+        </button>
+        <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-slate-500">
+          <span>
+            {lead.category ? `${lead.category} · ` : ""}
+            {lead.city}
+          </span>
+          {lead.source === "trustpilot" && <SourceBadge source={lead.source} />}
         </p>
         {lead.rating !== null && (
           <p className="text-xs text-slate-500">
@@ -42,7 +77,7 @@ export default function LeadTableRow({
             </span>{" "}
             <span className="tabular-nums">{lead.rating.toFixed(1)}</span>
             {lead.reviewCount !== null && (
-              <span className="text-slate-400"> ({lead.reviewCount.toLocaleString()})</span>
+              <span className="text-slate-500"> ({lead.reviewCount.toLocaleString()})</span>
             )}
           </p>
         )}
@@ -62,17 +97,17 @@ export default function LeadTableRow({
               )}
             </div>
           ) : (
-            <span className="text-slate-400">—</span>
+            <span className="text-slate-500">—</span>
           )}
         </td>
       )}
       <td className="whitespace-nowrap px-4 py-3">
         {lead.seoScore === null ? (
-          <span className="text-slate-400">—</span>
+          <span className="text-slate-500">—</span>
         ) : (
           <>
             <span className="font-semibold tabular-nums text-slate-800">{lead.seoScore}</span>
-            <span className="text-slate-400">/100</span>
+            <span className="text-slate-500">/100</span>
           </>
         )}
       </td>
@@ -80,7 +115,32 @@ export default function LeadTableRow({
         <StatusBadge status={lead.status} />
       </td>
       <td className="whitespace-nowrap px-4 py-3">
-        <SourceBadge source={lead.source} />
+        <div className="flex flex-col items-start gap-1">
+          <PipelineBadge status={w.pipelineStatus} />
+          <span className="text-xs text-slate-500">
+            {w.attemptCount === 0
+              ? "Not called yet"
+              : `${w.attemptCount} ${w.attemptCount === 1 ? "call" : "calls"}${w.lastOutcome ? ` · ${OUTCOME_LABEL[w.lastOutcome]}` : ""}`}
+          </span>
+          {w.reviewRequested && <span className="text-xs font-medium text-violet-700">Awaiting review</span>}
+        </div>
+      </td>
+      {showAssignee && (
+        <td className="whitespace-nowrap px-4 py-3 text-sm">
+          {w.assignee ? (
+            <span className="flex flex-col">
+              <span className="text-slate-700">{w.assignee.name}</span>
+              {!w.assignee.isActive && (
+                <span className="text-xs font-medium text-amber-700">Deactivated: reassign</span>
+              )}
+            </span>
+          ) : (
+            <span className="text-slate-500">Unassigned</span>
+          )}
+        </td>
+      )}
+      <td className="whitespace-nowrap px-4 py-3">
+        {w.followUp ? <FollowUpBadge dueAt={w.followUp.dueAt} bucket={w.followUp.bucket} /> : <span className="text-slate-500">—</span>}
       </td>
       <td className="px-4 py-3 text-sm text-slate-600">
         {lead.status === "NO_WEBSITE" ? (
@@ -93,7 +153,7 @@ export default function LeadTableRow({
         ) : lead.outreach?.pitchAngle && primaryIssues.length === 0 ? (
           <span className="text-slate-600">{lead.outreach.pitchAngle}</span>
         ) : primaryIssues.length === 0 ? (
-          <span className="text-slate-400">No issues detected</span>
+          <span className="text-slate-500">No issues detected</span>
         ) : (
           <>
             <ul className="space-y-0.5">
@@ -104,39 +164,36 @@ export default function LeadTableRow({
               ))}
             </ul>
             {remaining > 0 && (
-              <span className="text-xs font-medium text-slate-400">+{remaining} more</span>
+              <span className="text-xs font-medium text-slate-500">+{remaining} more</span>
             )}
           </>
         )}
       </td>
-      <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-600">
-        {lead.responseMs ? `${lead.responseMs.toLocaleString()} ms` : "—"}
-      </td>
       <td className="whitespace-nowrap px-4 py-3" onClick={(e) => e.stopPropagation()}>
-        {lead.websiteUrl ? (
+        <div className="flex flex-col items-start gap-1">
+          {lead.websiteUrl ? (
+            <a
+              href={lead.websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-800"
+            >
+              Website
+              <ExternalIcon />
+            </a>
+          ) : (
+            <span className="text-sm text-slate-500">No website</span>
+          )}
           <a
-            href={lead.websiteUrl}
+            href={lead.mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-800"
           >
-            Website
+            Maps
             <ExternalIcon />
           </a>
-        ) : (
-          <span className="text-sm text-slate-400">No website</span>
-        )}
-      </td>
-      <td className="whitespace-nowrap px-4 py-3" onClick={(e) => e.stopPropagation()}>
-        <a
-          href={lead.mapsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-800"
-        >
-          Maps
-          <ExternalIcon />
-        </a>
+        </div>
       </td>
     </tr>
   );

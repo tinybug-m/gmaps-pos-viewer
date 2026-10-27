@@ -2,10 +2,40 @@ import type { LeadContactPerson, LeadOutreach, LeadSource, RawLead, RawSeoStatus
 
 const VALID_STATUSES: RawSeoStatus[] = ["GOOD", "NEEDS_IMPROVEMENT", "POOR"];
 
+/** Bytes per import file; keeps the upload under the 4 MB server action body limit. */
+export const MAX_IMPORT_BYTES = 3_500_000;
+
 export class LeadDataError extends Error {}
 
 /** Parses and validates an uploaded JSON file into the same shape the sample dataset uses. */
 export function parseRawLeads(json: string): RawLead[] {
+  return parseArray(json).map((item, index) => validateLead(item, index));
+}
+
+export interface LeadFileRecords {
+  valid: { index: number; raw: RawLead }[];
+  invalid: { index: number; message: string }[];
+}
+
+/**
+ * Like `parseRawLeads`, but checks every record and reports each invalid one
+ * instead of stopping at the first, so an import can skip bad rows and say
+ * which they were. Still throws when the file itself isn't a JSON array.
+ */
+export function parseLeadFile(json: string): LeadFileRecords {
+  const result: LeadFileRecords = { valid: [], invalid: [] };
+  parseArray(json).forEach((item, index) => {
+    try {
+      result.valid.push({ index, raw: validateLead(item, index) });
+    } catch (err) {
+      if (!(err instanceof LeadDataError)) throw err;
+      result.invalid.push({ index, message: err.message });
+    }
+  });
+  return result;
+}
+
+function parseArray(json: string): unknown[] {
   let parsed: unknown;
   try {
     parsed = JSON.parse(json);
@@ -19,8 +49,7 @@ export function parseRawLeads(json: string): RawLead[] {
   if (parsed.length === 0) {
     throw new LeadDataError("The file doesn't contain any businesses.");
   }
-
-  return parsed.map((item, index) => validateLead(item, index));
+  return parsed;
 }
 
 function validateLead(item: unknown, index: number): RawLead {

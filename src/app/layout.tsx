@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SEO Lead Discovery",
-  description: "Internal dashboard for finding businesses with SEO opportunities",
+  title: { default: "Chinvat Bridge Leads", template: "%s · Chinvat Bridge Leads" },
+  description: "Internal lead management for the Chinvat Bridge team",
+  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

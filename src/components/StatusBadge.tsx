@@ -5,7 +5,7 @@ import type { LeadStatus } from "@/types/lead";
 const STATUS_STYLES: Record<LeadStatus, string> = {
   POOR: "bg-red-50 text-red-800",
   NEEDS_IMPROVEMENT: "bg-amber-50 text-amber-800",
-  GOOD: "bg-slate-100 text-slate-500",
+  GOOD: "bg-slate-100 text-slate-600",
   CRAWL_FAILED: "bg-sky-50 text-sky-700",
   NO_WEBSITE: "bg-teal-50 text-teal-800",
 };

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./pnpm-lock.yaml)",
+      "Read(./refrence/data.json)",
+      "Read(./.local/**)",
+      "Read(./.next/**)"
+    ]
+  }
+}
