@@ -11,6 +11,7 @@ export function navFor(role: Role): NavItem[] {
     { href: "/leads", label: "Leads", roles: ["admin", "supervisor", "caller"] },
     { href: "/dashboard", label: "Dashboard", roles: ["admin", "supervisor", "caller"] },
     { href: "/admin/import", label: "Import", roles: ["admin"] },
+    { href: "/admin/assign-file", label: "Assign file", roles: ["admin"] },
     { href: "/admin/users", label: "Users", roles: ["admin"] },
     { href: "/admin/audit", label: "Audit", roles: ["admin"] },
   ];

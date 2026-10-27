@@ -4,7 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { z } from "zod";
 import { can, type Viewer } from "@/lib/permissions";
 import type { Role } from "@/lib/workflow";
-import type { Db } from "../db/client";
+import type { Db, Tx } from "../db/client";
 import { leadAssignments, leads, users } from "../db/schema";
 import { fail, type Failure, type Result } from "../result";
 import { assignInput, firstIssue } from "../validation";
@@ -45,94 +45,101 @@ export async function assignLeads(
   if (!can(actor, "leads.assign")) return fail("forbidden", "Only an admin can assign leads.");
   const parsed = assignInput.safeParse(input);
   if (!parsed.success) return fail("invalid", firstIssue(parsed.error));
-  const { leadIds, toUserId, expected, reason } = parsed.data;
+  return db.transaction((tx) => assignInTx(tx, actor, parsed.data, ctx));
+}
 
-  return db.transaction(async (tx): Promise<AssignResult> => {
-    let target: { id: string; name: string } | null = null;
-    if (toUserId) {
-      // FOR SHARE blocks a concurrent deactivation or role change until this commits.
-      const [user] = await tx
-        .select({ id: users.id, name: users.name, role: users.role, isActive: users.isActive })
-        .from(users)
-        .where(eq(users.id, toUserId))
-        .for("share");
-      if (!user || !user.isActive) return fail("invalid", "Pick an active team member to assign to.");
-      if (!ASSIGNABLE_ROLES.includes(user.role)) {
-        return fail("invalid", "Supervisors review leads but don't call them, so leads can't be assigned to them.");
-      }
-      target = user;
+/** The body of `assignLeads`, for callers that already hold a transaction and have validated `input`. */
+export async function assignInTx(
+  tx: Tx,
+  actor: Viewer,
+  input: { leadIds: string[]; toUserId: string | null; expected: Record<string, string | null>; reason?: string },
+  ctx: { ip?: string | null } = {},
+): Promise<AssignResult> {
+  const { leadIds, toUserId, expected, reason } = input;
+  let target: { id: string; name: string } | null = null;
+  if (toUserId) {
+    // FOR SHARE blocks a concurrent deactivation or role change until this commits.
+    const [user] = await tx
+      .select({ id: users.id, name: users.name, role: users.role, isActive: users.isActive })
+      .from(users)
+      .where(eq(users.id, toUserId))
+      .for("share");
+    if (!user || !user.isActive) return fail("invalid", "Pick an active team member to assign to.");
+    if (!ASSIGNABLE_ROLES.includes(user.role)) {
+      return fail("invalid", "Supervisors review leads but don't call them, so leads can't be assigned to them.");
     }
+    target = user;
+  }
 
-    const current = await tx
-      .select({ id: leads.id, name: leads.name, assignedTo: leads.assignedTo, archivedAt: leads.archivedAt })
-      .from(leads)
-      .where(inArray(leads.id, leadIds))
-      .orderBy(asc(leads.id))
-      .for("update");
-    const byId = new Map(current.map((l) => [l.id, l]));
+  const current = await tx
+    .select({ id: leads.id, name: leads.name, assignedTo: leads.assignedTo, archivedAt: leads.archivedAt })
+    .from(leads)
+    .where(inArray(leads.id, leadIds))
+    .orderBy(asc(leads.id))
+    .for("update");
+  const byId = new Map(current.map((l) => [l.id, l]));
 
-    const problems: AssignProblem[] = [];
-    for (const leadId of leadIds) {
-      const lead = byId.get(leadId);
-      if (!lead) problems.push({ leadId, name: null, reason: "not_found", message: "This lead no longer exists." });
-      else if (lead.archivedAt) {
-        problems.push({ leadId, name: lead.name, reason: "archived", message: "This lead has been archived." });
-      } else if (lead.assignedTo !== expected[leadId]) {
-        problems.push({
-          leadId,
-          name: lead.name,
-          reason: "changed",
-          message: "Someone else changed who this lead is assigned to since you loaded the list.",
-        });
-      }
+  const problems: AssignProblem[] = [];
+  for (const leadId of leadIds) {
+    const lead = byId.get(leadId);
+    if (!lead) problems.push({ leadId, name: null, reason: "not_found", message: "This lead no longer exists." });
+    else if (lead.archivedAt) {
+      problems.push({ leadId, name: lead.name, reason: "archived", message: "This lead has been archived." });
+    } else if (lead.assignedTo !== expected[leadId]) {
+      problems.push({
+        leadId,
+        name: lead.name,
+        reason: "changed",
+        message: "Someone else changed who this lead is assigned to since you loaded the list.",
+      });
     }
-    if (problems.length > 0) {
-      const changed = problems.filter((p) => p.reason === "changed").length;
-      return {
-        ...fail(
-          changed === problems.length ? "conflict" : "invalid",
-          `${problems.length} of the selected leads can't be assigned. Nothing was changed. Refresh the list and try again.`,
-        ),
-        problems,
-      };
-    }
+  }
+  if (problems.length > 0) {
+    const changed = problems.filter((p) => p.reason === "changed").length;
+    return {
+      ...fail(
+        changed === problems.length ? "conflict" : "invalid",
+        `${problems.length} of the selected leads can't be assigned. Nothing was changed. Refresh the list and try again.`,
+      ),
+      problems,
+    };
+  }
 
-    const toChange = leadIds.filter((leadId) => byId.get(leadId)!.assignedTo !== toUserId);
-    if (toChange.length > 0) {
-      const now = new Date();
+  const toChange = leadIds.filter((leadId) => byId.get(leadId)!.assignedTo !== toUserId);
+  if (toChange.length > 0) {
+    const now = new Date();
+    await tx
+      .update(leadAssignments)
+      .set({ endedAt: now, endedBy: actor.id })
+      .where(and(inArray(leadAssignments.leadId, toChange), isNull(leadAssignments.endedAt)));
+    if (target) {
       await tx
-        .update(leadAssignments)
-        .set({ endedAt: now, endedBy: actor.id })
-        .where(and(inArray(leadAssignments.leadId, toChange), isNull(leadAssignments.endedAt)));
-      if (target) {
-        await tx
-          .insert(leadAssignments)
-          .values(toChange.map((leadId) => ({ leadId, assignedTo: target.id, assignedBy: actor.id, reason, startedAt: now })));
-      }
-      await tx
-        .update(leads)
-        .set({
-          assignedTo: toUserId,
-          assignedAt: toUserId ? now : null,
-          version: sql`${leads.version} + 1`,
-          updatedAt: now,
-        })
-        .where(inArray(leads.id, toChange));
-      await writeAudit(
-        tx,
-        toChange.map((leadId) => ({
-          actorId: actor.id,
-          action: toUserId ? "lead.assigned" : "lead.unassigned",
-          entityType: "lead" as const,
-          entityId: leadId,
-          before: { assignedTo: byId.get(leadId)!.assignedTo },
-          after: { assignedTo: toUserId, ...(reason && { reason }) },
-          ip: ctx.ip,
-        })),
-      );
+        .insert(leadAssignments)
+        .values(toChange.map((leadId) => ({ leadId, assignedTo: target.id, assignedBy: actor.id, reason, startedAt: now })));
     }
-    return { ok: true, changed: toChange.length, unchanged: leadIds.length - toChange.length };
-  });
+    await tx
+      .update(leads)
+      .set({
+        assignedTo: toUserId,
+        assignedAt: toUserId ? now : null,
+        version: sql`${leads.version} + 1`,
+        updatedAt: now,
+      })
+      .where(inArray(leads.id, toChange));
+    await writeAudit(
+      tx,
+      toChange.map((leadId) => ({
+        actorId: actor.id,
+        action: toUserId ? "lead.assigned" : "lead.unassigned",
+        entityType: "lead" as const,
+        entityId: leadId,
+        before: { assignedTo: byId.get(leadId)!.assignedTo },
+        after: { assignedTo: toUserId, ...(reason && { reason }) },
+        ip: ctx.ip,
+      })),
+    );
+  }
+  return { ok: true, changed: toChange.length, unchanged: leadIds.length - toChange.length };
 }
 
 export interface AssignmentPeriod {

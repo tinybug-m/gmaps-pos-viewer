@@ -125,6 +125,12 @@ export const importInput = z.object({
     .max(MAX_IMPORT_CHARS, "That file is too large to import in one go (3.5 MB). Split it into smaller files."),
 });
 
+export const assignFileInput = importInput.extend({
+  toUserId: id,
+  /** The lead count the admin confirmed in the preview; a different count on commit means the data moved. */
+  expectedAssign: z.number().int().min(0).optional(),
+});
+
 /** First human-readable message from a failed parse. */
 export function firstIssue(error: z.ZodError): string {
   return error.issues[0]?.message ?? "Invalid input.";
