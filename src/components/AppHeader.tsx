@@ -8,7 +8,10 @@ const ROLE_LABEL: Record<Role, string> = { admin: "Admin", supervisor: "Supervis
 
 /** Links each role sees. Hiding a link is only convenience; every page checks the role itself. */
 export function navFor(role: Role): NavItem[] {
-  const items: (NavItem & { roles: Role[] })[] = [{ href: "/", label: "Leads", roles: ["admin", "supervisor", "caller"] }];
+  const items: (NavItem & { roles: Role[] })[] = [
+    { href: "/leads", label: "Leads", roles: ["admin", "supervisor", "caller"] },
+    { href: "/admin/import", label: "Import", roles: ["admin"] },
+  ];
   return items.filter((i) => i.roles.includes(role));
 }
 

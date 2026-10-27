@@ -56,7 +56,7 @@ describeDb("schema constraints and history guards", () => {
       "users_email_lowercase",
     );
     expect((await pgError(insertLead(t.db, { source: "facebook" }))).constraint).toBe("leads_source_known");
-    expect((await pgError(insertLead(t.db, { assignedTo: user.id }))).constraint).toBe("leads_assignment_pair");
+    expect((await pgError(insertLead(t.db, { assignedTo: user.id, assignedAt: null }))).constraint).toBe("leads_assignment_pair");
     expect((await pgError(insertLead(t.db, { attemptCount: -1 }))).constraint).toBe("leads_attempts_nonneg");
 
     const lead = await insertLead(t.db);

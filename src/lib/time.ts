@@ -119,3 +119,22 @@ export function followUpPresets(now: Date, timeZone = BUSINESS_TIME_ZONE): { lab
     { label: "In 3 days", at: zonedTime(inThree.year, inThree.month, inThree.day, 9, 0, timeZone) },
   ];
 }
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * "12 Oct 2026" in the business time zone. Assembled by hand rather than
+ * with Intl's locale output, which differs between Node and browsers and
+ * would make server and client render different text.
+ */
+export function formatDate(date: Date, timeZone = BUSINESS_TIME_ZONE): string {
+  const p = localParts(date, timeZone);
+  return `${p.day} ${MONTHS[p.month - 1]} ${p.year}`;
+}
+
+/** "12 Oct 2026, 14:05" in the business time zone. */
+export function formatDateTime(date: Date, timeZone = BUSINESS_TIME_ZONE): string {
+  const p = localParts(date, timeZone);
+  return `${formatDate(date, timeZone)}, ${pad(p.hour)}:${pad(p.minute)}`;
+}

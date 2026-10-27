@@ -1,3 +1,6 @@
+import type { FollowUpBucket } from "@/lib/time";
+import type { CallOutcome, PipelineStatus } from "@/lib/workflow";
+
 export type RawSeoStatus = "GOOD" | "NEEDS_IMPROVEMENT" | "POOR";
 
 export type LeadSource = "google-maps" | "trustpilot";
@@ -94,3 +97,27 @@ export interface Lead {
   outreach: LeadOutreach | null;
   searchText: string;
 }
+
+export interface LeadAssignee {
+  id: string;
+  name: string;
+  /** False once the user is deactivated; their leads stay assigned until an admin moves them. */
+  isActive: boolean;
+}
+
+/** Where a lead stands in the team's workflow, as stored in the database. */
+export interface LeadWorkflow {
+  pipelineStatus: PipelineStatus;
+  assignee: LeadAssignee | null;
+  attemptCount: number;
+  lastOutcome: CallOutcome | null;
+  lastCallAt: Date | null;
+  /** The lead's open follow-up, bucketed against the server's clock at request time. */
+  followUp: { dueAt: Date; bucket: FollowUpBucket } | null;
+  reviewRequested: boolean;
+  archived: boolean;
+  version: number;
+}
+
+/** A lead as the team sees it. `searchText` is only needed for filtering, which happens on the server. */
+export type TeamLead = Omit<Lead, "searchText"> & { workflow: LeadWorkflow };

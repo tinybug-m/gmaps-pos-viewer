@@ -64,7 +64,7 @@ function matchesScoreBand(score: number | null, bands: Set<ScoreBand>): boolean 
   return SCORE_BANDS.some((b) => bands.has(b.key) && score >= b.min && score <= b.max);
 }
 
-export function applyFilters(leads: Lead[], filters: LeadFilters): Lead[] {
+export function applyFilters<T extends Lead>(leads: T[], filters: LeadFilters): T[] {
   const search = filters.search.trim().toLowerCase();
 
   return leads.filter((lead) => {

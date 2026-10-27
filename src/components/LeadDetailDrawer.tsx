@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import CallBadge, { humanize } from "@/components/CallBadge";
 import IssueList from "@/components/IssueList";
@@ -9,7 +9,18 @@ import SourceBadge from "@/components/SourceBadge";
 import StatusBadge from "@/components/StatusBadge";
 import type { Lead, LeadContactPerson, LeadOutreach } from "@/types/lead";
 
-export default function LeadDetailDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }) {
+export default function LeadDetailDrawer({
+  lead,
+  onClose,
+  actions,
+}: {
+  lead: Omit<Lead, "searchText">;
+  onClose: () => void;
+  /** Extra links or buttons shown under the title, e.g. "Open lead". */
+  actions?: ReactNode;
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -18,8 +29,15 @@ export default function LeadDetailDrawer({ lead, onClose }: { lead: Lead; onClos
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
+  // Move focus into the panel when it opens and give it back when it closes.
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    return () => previous?.focus();
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-30 flex justify-end">
+    <div className="fixed inset-0 z-30 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="lead-drawer-title">
       <button
         type="button"
         aria-label="Close details"
@@ -30,13 +48,17 @@ export default function LeadDetailDrawer({ lead, onClose }: { lead: Lead; onClos
       <div className="relative flex h-full w-full max-w-lg flex-col overflow-y-auto bg-white shadow-xl">
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
           <div>
-            <h2 className="text-lg font-semibold text-slate-800">{lead.name}</h2>
+            <h2 id="lead-drawer-title" className="text-lg font-semibold text-slate-800">
+              {lead.name}
+            </h2>
             <p className="text-sm text-slate-500">
               {lead.category ? `${lead.category} · ` : ""}
               {lead.city}
             </p>
+            {actions && <div className="mt-3 flex flex-wrap gap-2">{actions}</div>}
           </div>
           <button
+            ref={closeRef}
             type="button"
             onClick={onClose}
             aria-label="Close"

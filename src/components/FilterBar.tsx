@@ -1,8 +1,13 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import MultiSelectDropdown from "@/components/MultiSelectDropdown";
-import { SCORE_BANDS, defaultFilters, isDefaultFilters, type LeadFilters, type ScoreBand } from "@/lib/filters";
 import { SOURCE_LABELS } from "@/components/SourceBadge";
+import { SCORE_BANDS, type ScoreBand } from "@/lib/filters";
+import { isDefaultLeadQuery, type LeadListOptions, type LeadQuery } from "@/lib/lead-query";
+import type { FollowUpBucket } from "@/lib/time";
+import { PIPELINE_LABEL, PIPELINE_STATUSES, type PipelineStatus } from "@/lib/workflow";
 import type { LeadSource, LeadStatus } from "@/types/lead";
 
 const SOURCES: LeadSource[] = ["google-maps", "trustpilot"];
@@ -13,59 +18,124 @@ const CORE_STATUS_PILLS: { status: LeadStatus; label: string; activeClass: strin
   { status: "NO_WEBSITE", label: "No Website", activeClass: "bg-teal-50 text-teal-800" },
 ];
 
+const DUE_CHIPS: { bucket: FollowUpBucket; label: string }[] = [
+  { bucket: "overdue", label: "Overdue" },
+  { bucket: "today", label: "Due today" },
+  { bucket: "upcoming", label: "Upcoming" },
+];
+
+const PILL = "rounded-full px-3 py-1.5 text-sm font-medium transition-colors";
+const PILL_ON = "bg-slate-100 text-slate-800";
+const PILL_OFF = "bg-white text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50";
+
+function toggled<T>(set: Set<T>, value: T): Set<T> {
+  const next = new Set(set);
+  if (next.has(value)) next.delete(value);
+  else next.add(value);
+  return next;
+}
+
 export default function FilterBar({
-  filters,
+  query,
   onChange,
-  cities,
-  issueOptions,
-  niches,
-  showOutreach,
+  onReset,
+  options,
+  viewAll,
+  canArchive,
 }: {
-  filters: LeadFilters;
-  onChange: (filters: LeadFilters) => void;
-  cities: string[];
-  issueOptions: string[];
-  niches: string[];
-  showOutreach: boolean;
+  query: LeadQuery;
+  onChange: (query: LeadQuery) => void;
+  onReset: () => void;
+  options: LeadListOptions;
+  /** Admins and supervisors: show the assignee filter. */
+  viewAll: boolean;
+  /** Admins: show the archived view. */
+  canArchive: boolean;
 }) {
-  function toggleStatus(status: LeadStatus) {
-    const next = new Set(filters.statuses);
-    if (next.has(status)) next.delete(status);
-    else next.add(status);
-    onChange({ ...filters, statuses: next });
-  }
+  const { filters } = query;
+  const setFilters = (next: Partial<LeadQuery["filters"]>) => onChange({ ...query, filters: { ...filters, ...next } });
+  const toggleStatus = (status: LeadStatus) => setFilters({ statuses: toggled(filters.statuses, status) });
+  const togglePipeline = (status: PipelineStatus) => onChange({ ...query, pipeline: toggled(query.pipeline, status) });
+  const toggleBand = (band: ScoreBand) => setFilters({ scoreBands: toggled(filters.scoreBands, band) });
+  const toggleSource = (source: LeadSource) => setFilters({ sources: toggled(filters.sources, source) });
 
-  function toggleScoreBand(band: ScoreBand) {
-    const next = new Set(filters.scoreBands);
-    if (next.has(band)) next.delete(band);
-    else next.add(band);
-    onChange({ ...filters, scoreBands: next });
-  }
-
-  function toggleSource(source: LeadSource) {
-    const next = new Set(filters.sources);
-    if (next.has(source)) next.delete(source);
-    else next.add(source);
-    onChange({ ...filters, sources: next });
-  }
-
-  const showGood = filters.statuses.has("GOOD");
-  const showCrawlFailed = filters.statuses.has("CRAWL_FAILED");
+  // A uuid in the URL for someone with no leads in this view still needs an option to show as selected.
+  const knownAssignee =
+    query.assignee === null || query.assignee === "unassigned" || query.assignee === "me"
+      ? true
+      : options.assignees.some((a) => a.id === query.assignee);
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3.5">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Status</span>
+      <FilterRow label="Pipeline">
+        {PIPELINE_STATUSES.map((status) => (
+          <button
+            key={status}
+            type="button"
+            aria-pressed={query.pipeline.has(status)}
+            onClick={() => togglePipeline(status)}
+            className={`${PILL} ${query.pipeline.has(status) ? PILL_ON : PILL_OFF}`}
+          >
+            {PIPELINE_LABEL[status]}
+          </button>
+        ))}
+      </FilterRow>
+
+      <FilterRow label="Follow-up">
+        {DUE_CHIPS.map(({ bucket, label }) => (
+          <ToggleChip
+            key={bucket}
+            label={label}
+            active={query.due === bucket}
+            onClick={() => onChange({ ...query, due: query.due === bucket ? null : bucket })}
+          />
+        ))}
+
+        {viewAll && (
+          <>
+            <span className="mx-1 h-5 w-px bg-slate-200" aria-hidden />
+            <label className="flex items-center gap-2 text-sm text-slate-500">
+              Assignee
+              <select
+                value={query.assignee ?? ""}
+                onChange={(e) => onChange({ ...query, assignee: e.target.value || null })}
+                className="rounded-full bg-white px-3 py-1.5 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-200"
+              >
+                <option value="">Anyone</option>
+                <option value="unassigned">Unassigned</option>
+                <option value="me">Assigned to me</option>
+                {!knownAssignee && <option value={query.assignee ?? ""}>Selected person</option>}
+                {options.assignees.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                    {a.isActive ? "" : " (deactivated)"}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </>
+        )}
+
+        {canArchive && (
+          <>
+            <span className="mx-1 h-5 w-px bg-slate-200" aria-hidden />
+            <ToggleChip
+              label="Archived leads"
+              active={query.archived}
+              onClick={() => onChange({ ...query, archived: !query.archived })}
+            />
+          </>
+        )}
+      </FilterRow>
+
+      <FilterRow label="SEO Status">
         {CORE_STATUS_PILLS.map(({ status, label, activeClass }) => (
           <button
             key={status}
             type="button"
+            aria-pressed={filters.statuses.has(status)}
             onClick={() => toggleStatus(status)}
-            className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-              filters.statuses.has(status)
-                ? activeClass
-                : "bg-white text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
-            }`}
+            className={`${PILL} ${filters.statuses.has(status) ? activeClass : PILL_OFF}`}
           >
             {label}
           </button>
@@ -73,122 +143,100 @@ export default function FilterBar({
 
         <span className="mx-1 h-5 w-px bg-slate-200" aria-hidden />
 
-        <ToggleChip
-          label="Show good websites"
-          active={showGood}
-          onClick={() => toggleStatus("GOOD")}
-        />
+        <ToggleChip label="Show good websites" active={filters.statuses.has("GOOD")} onClick={() => toggleStatus("GOOD")} />
         <ToggleChip
           label="Include crawl failures"
-          active={showCrawlFailed}
+          active={filters.statuses.has("CRAWL_FAILED")}
           onClick={() => toggleStatus("CRAWL_FAILED")}
         />
-        {showOutreach && (
+        {options.showOutreach && (
           <ToggleChip
             label="Call-ready only"
             active={filters.callReadyOnly}
-            onClick={() => onChange({ ...filters, callReadyOnly: !filters.callReadyOnly })}
+            onClick={() => setFilters({ callReadyOnly: !filters.callReadyOnly })}
           />
         )}
-      </div>
+      </FilterRow>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <FilterRow label="SEO Score">
+        {SCORE_BANDS.map((band) => (
+          <button
+            key={band.key}
+            type="button"
+            aria-pressed={filters.scoreBands.has(band.key)}
+            onClick={() => toggleBand(band.key)}
+            className={`${PILL} ${filters.scoreBands.has(band.key) ? PILL_ON : PILL_OFF}`}
+          >
+            {band.label}
+          </button>
+        ))}
+
+        <span className="mx-1 h-5 w-px bg-slate-200" aria-hidden />
+
         <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Source</span>
         {SOURCES.map((source) => (
           <button
             key={source}
             type="button"
+            aria-pressed={filters.sources.has(source)}
             onClick={() => toggleSource(source)}
-            className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-              filters.sources.has(source)
-                ? "bg-slate-100 text-slate-800"
-                : "bg-white text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
-            }`}
+            className={`${PILL} ${filters.sources.has(source) ? PILL_ON : PILL_OFF}`}
           >
             {SOURCE_LABELS[source]}
           </button>
         ))}
-      </div>
+      </FilterRow>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">SEO Score</span>
-        {SCORE_BANDS.map((band) => (
-          <button
-            key={band.key}
-            type="button"
-            onClick={() => toggleScoreBand(band.key)}
-            className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-              filters.scoreBands.has(band.key)
-                ? "bg-slate-100 text-slate-800"
-                : "bg-white text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
-            }`}
-          >
-            {band.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Refine</span>
+      <FilterRow label="Refine">
         <MultiSelectDropdown
           label="City"
-          options={cities}
+          options={options.cities}
           selected={filters.cities}
-          onChange={(next) => onChange({ ...filters, cities: next })}
+          onChange={(next) => setFilters({ cities: next })}
         />
-        {niches.length > 0 && (
+        {options.niches.length > 0 && (
           <MultiSelectDropdown
             label="Niche"
-            options={niches}
+            options={options.niches}
             selected={filters.niches}
-            onChange={(next) => onChange({ ...filters, niches: next })}
+            onChange={(next) => setFilters({ niches: next })}
           />
         )}
         <MultiSelectDropdown
           label="Issues"
-          options={issueOptions}
+          options={options.issueOptions}
           selected={filters.issueTemplates}
-          onChange={(next) => onChange({ ...filters, issueTemplates: next })}
+          onChange={(next) => setFilters({ issueTemplates: next })}
         />
 
-        {!isDefaultFilters(filters) && (
-          <button
-            type="button"
-            onClick={() => onChange(defaultFilters())}
-            className="ml-auto text-sm font-medium text-slate-500 hover:text-slate-800"
-          >
+        {!isDefaultLeadQuery(query) && (
+          <button type="button" onClick={onReset} className="ml-auto text-sm font-medium text-slate-500 hover:text-slate-800">
             Reset to default view
           </button>
         )}
-      </div>
+      </FilterRow>
     </div>
   );
 }
 
-function ToggleChip({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
+function FilterRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-wrap items-center gap-2">
+      <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function ToggleChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-        active
-          ? "bg-sky-50 text-sky-700"
-          : "bg-white text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
-      }`}
+      className={`flex items-center gap-1.5 ${PILL} ${active ? "bg-sky-50 text-sky-700" : PILL_OFF}`}
     >
-      <span
-        className={`h-2 w-2 rounded-full ${active ? "bg-sky-500" : "bg-slate-300"}`}
-        aria-hidden
-      />
+      <span className={`h-2 w-2 rounded-full ${active ? "bg-sky-500" : "bg-slate-300"}`} aria-hidden />
       {label}
     </button>
   );

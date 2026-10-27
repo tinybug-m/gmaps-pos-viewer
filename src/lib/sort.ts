@@ -17,6 +17,9 @@ export interface SortState {
   direction: SortDirection;
 }
 
+/** Anything with a lead's display fields, with or without its search text. */
+export type SortableLead = Omit<Lead, "searchText">;
+
 export const DEFAULT_SORT: SortState = { key: "score", direction: "asc" };
 
 const PRIORITY_RANK: Record<LeadPriority, number> = {
@@ -28,7 +31,7 @@ const PRIORITY_RANK: Record<LeadPriority, number> = {
 
 // "Should call: YES" first, then by call-list grade (A before B…); leads
 // without outreach data sink to the bottom.
-function callRank(lead: Lead): number {
+function callRank(lead: SortableLead): number {
   const o = lead.outreach;
   if (!o) return Number.MAX_SAFE_INTEGER;
   const callBucket = o.shouldCall === "YES" ? 0 : o.shouldCall === null ? 1 : 2;
@@ -36,7 +39,7 @@ function callRank(lead: Lead): number {
   return callBucket * 1000 + grade;
 }
 
-function compareValues(a: Lead, b: Lead, key: SortKey): number {
+function compareValues(a: SortableLead, b: SortableLead, key: SortKey): number {
   switch (key) {
     case "score":
       // No-website leads have no score — treat them as "worse than 0" so
@@ -60,14 +63,14 @@ function compareValues(a: Lead, b: Lead, key: SortKey): number {
   }
 }
 
-export function sortLeads(leads: Lead[], sort: SortState): Lead[] {
+export function sortLeads<T extends SortableLead>(leads: T[], sort: SortState): T[] {
   const sorted = [...leads].sort((a, b) => compareValues(a, b, sort.key));
   return sort.direction === "asc" ? sorted : sorted.reverse();
 }
 
 // Direction a column starts in the first time it's clicked, chosen so the
 // "worst" prospects surface first rather than always defaulting to A→Z.
-const INITIAL_DIRECTION: Record<SortKey, SortDirection> = {
+export const INITIAL_DIRECTION: Record<SortKey, SortDirection> = {
   score: "asc",
   issueCount: "desc",
   responseMs: "desc",

@@ -34,7 +34,16 @@ export async function insertLead(db: Db, overrides: Partial<typeof leads.$inferI
   const raw = rawLead(n);
   const [row] = await db
     .insert(leads)
-    .values({ dedupeKey: `test:${n}`, raw, name: raw.name, city: raw.city, source: "google-maps", ...overrides })
+    .values({
+      dedupeKey: `test:${n}`,
+      raw,
+      name: raw.name,
+      city: raw.city,
+      source: "google-maps",
+      // The schema requires assigned_at whenever there's an assignee.
+      assignedAt: overrides.assignedTo ? new Date() : undefined,
+      ...overrides,
+    })
     .returning();
   return row;
 }
