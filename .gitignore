@@ -43,3 +43,11 @@ next-env.d.ts
 
 # playwright mcp test output
 .playwright-mcp/
+
+# local dev-only secrets and smoke-test state (never commit)
+.local/
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
