@@ -235,6 +235,11 @@ export default function LeadsView({
         <LeadDetailDrawer
           lead={selectedLead}
           onClose={() => setSelectedId(null)}
+          actions={
+            <Link href={`/leads/${selectedLead.id}`} className={buttonSecondary}>
+              Open lead
+            </Link>
+          }
         />
       )}
     </div>
