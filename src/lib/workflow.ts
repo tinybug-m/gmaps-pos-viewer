@@ -33,6 +33,8 @@ export type CallOutcome = (typeof CALL_OUTCOMES)[number];
 export const ROLES = ["admin", "supervisor", "caller"] as const;
 export type Role = (typeof ROLES)[number];
 
+export const ROLE_LABEL: Record<Role, string> = { admin: "Admin", supervisor: "Supervisor", caller: "Caller" };
+
 const TERMINAL: ReadonlySet<PipelineStatus> = new Set(["closed_won", "closed_lost", "invalid", "do_not_call"]);
 
 export function isTerminal(status: PipelineStatus): boolean {

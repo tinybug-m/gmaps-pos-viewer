@@ -2,15 +2,14 @@ import Link from "next/link";
 
 import { logoutAction } from "@/app/(app)/actions";
 import NavLinks, { type NavItem } from "@/components/NavLinks";
-import type { Role } from "@/lib/workflow";
-
-const ROLE_LABEL: Record<Role, string> = { admin: "Admin", supervisor: "Supervisor", caller: "Caller" };
+import { ROLE_LABEL, type Role } from "@/lib/workflow";
 
 /** Links each role sees. Hiding a link is only convenience; every page checks the role itself. */
 export function navFor(role: Role): NavItem[] {
   const items: (NavItem & { roles: Role[] })[] = [
     { href: "/leads", label: "Leads", roles: ["admin", "supervisor", "caller"] },
     { href: "/admin/import", label: "Import", roles: ["admin"] },
+    { href: "/admin/users", label: "Users", roles: ["admin"] },
   ];
   return items.filter((i) => i.roles.includes(role));
 }
