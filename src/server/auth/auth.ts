@@ -39,6 +39,7 @@ export function createAuth(db: Db, opts: { secret?: string; baseURL?: string } =
     },
     session: { expiresIn: SESSION_TTL_SECONDS, updateAge: 24 * 60 * 60 },
     advanced: { database: { generateId: "uuid" } },
+    logger: { disabled: process.env.VITEST === "true" },
     databaseHooks: {
       session: {
         create: {
