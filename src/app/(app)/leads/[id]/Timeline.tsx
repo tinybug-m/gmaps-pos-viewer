@@ -68,7 +68,7 @@ function Entry({ entry: e, canVoid }: { entry: TimelineEntry; canVoid: boolean }
               e.kind === "feedback" ? "rounded-md bg-amber-50 px-3 py-2 text-amber-900" : "text-slate-700"
             } ${e.voided ? "line-through" : ""}`}
           >
-            {e.body}
+            {e.body ?? <span className="italic">Text removed when voided.</span>}
           </p>
           <Voided entry={e} canVoid={canVoid} type="note" />
         </div>

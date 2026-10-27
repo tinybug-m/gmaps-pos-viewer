@@ -212,6 +212,37 @@ describeDb("lead activity", () => {
       expect(feedback).toMatchObject({ by: { id: supervisor.id }, about: { id: alice.id }, body: "Good pitch, confirm budget next time" });
     });
 
+    it("only addresses feedback to someone who has worked the lead", async () => {
+      const lead = await leadFor(alice);
+      const stranger = await insertUser(t.db, "caller");
+      expect(await addNote(t.db, supervisor, { leadId: lead.id, body: "Not theirs", kind: "feedback", aboutUserId: stranger.id })).toMatchObject({
+        ok: false,
+        code: "invalid",
+      });
+      expect(await addNote(t.db, supervisor, { leadId: lead.id, body: "Unknown", kind: "feedback", aboutUserId: "00000000-0000-4000-8000-000000000000" })).toMatchObject({
+        ok: false,
+        code: "invalid",
+      });
+
+      await assignLeads(t.db, admin, { leadIds: [lead.id], toUserId: bob.id, expected: { [lead.id]: alice.id } });
+      expect(await addNote(t.db, supervisor, { leadId: lead.id, body: "For the previous owner", kind: "feedback", aboutUserId: alice.id })).toMatchObject({ ok: true });
+      expect(await addNote(t.db, supervisor, { leadId: lead.id, body: "For the current owner", kind: "feedback", aboutUserId: bob.id })).toMatchObject({ ok: true });
+    });
+
+    it("shows a caller only feedback for them or for nobody in particular; staff see all of it", async () => {
+      const lead = await leadFor(alice);
+      await addNote(t.db, supervisor, { leadId: lead.id, body: "Alice: slow down on the intro", kind: "feedback" });
+      await assignLeads(t.db, admin, { leadIds: [lead.id], toUserId: bob.id, expected: { [lead.id]: alice.id } });
+      await addNote(t.db, supervisor, { leadId: lead.id, body: "Bob: good recovery", kind: "feedback" });
+      await addNote(t.db, admin, { leadId: lead.id, body: "Team note", kind: "note" });
+
+      const bodies = async (v: Viewer) =>
+        (await getLeadActivity(t.db, v, lead.id))!.entries.filter((e) => e.kind === "feedback" || e.kind === "note").map((e) => "body" in e && e.body);
+      expect((await bodies(bob)).sort()).toEqual(["Bob: good recovery", "Team note"]);
+      expect((await bodies(supervisor)).sort()).toEqual(["Alice: slow down on the intro", "Bob: good recovery", "Team note"]);
+      expect((await bodies(admin)).sort()).toEqual(["Alice: slow down on the intro", "Bob: good recovery", "Team note"]);
+    });
+
     it("doesn't bump the version, so an open call form stays valid", async () => {
       const lead = await leadFor();
       await addNote(t.db, supervisor, { leadId: lead.id, body: "Try the owner directly", kind: "note" });
@@ -267,6 +298,24 @@ describeDb("lead activity", () => {
       expect(activity?.liveCalls).toBe(1);
       const voided = activity?.entries.find((e) => e.kind === "call" && e.id === second.callId);
       expect(voided).toMatchObject({ voided: { by: { id: admin.id }, reason: "Logged on the wrong lead" } });
+    });
+
+    it("hides the text of voided calls and notes from everyone who can't void", async () => {
+      const lead = await leadFor(alice);
+      const call = await logCall(t.db, alice, { leadId: lead.id, outcome: "busy", newStatus: "in_progress", notes: "Typed into the wrong lead", version: lead.version }, { now });
+      const note = await addNote(t.db, alice, { leadId: lead.id, body: "Also the wrong lead", kind: "note" });
+      if (!call.ok || !note.ok) throw new Error("setup failed");
+      await voidEntry(t.db, admin, { type: "call", entryId: call.callId, reason: "Wrong lead" });
+      await voidEntry(t.db, admin, { type: "note", entryId: note.noteId, reason: "Wrong lead" });
+
+      for (const v of [alice, supervisor]) {
+        const entries = (await getLeadActivity(t.db, v, lead.id))!.entries;
+        expect(entries.find((e) => e.kind === "call")).toMatchObject({ notes: null, voided: { reason: "Wrong lead" } });
+        expect(entries.find((e) => e.kind === "note")).toMatchObject({ body: null, voided: { reason: "Wrong lead" } });
+      }
+      const forAdmin = (await getLeadActivity(t.db, admin, lead.id))!.entries;
+      expect(forAdmin.find((e) => e.kind === "call")).toMatchObject({ notes: "Typed into the wrong lead" });
+      expect(forAdmin.find((e) => e.kind === "note")).toMatchObject({ body: "Also the wrong lead" });
     });
 
     it("can't be bypassed by editing call rows directly", async () => {

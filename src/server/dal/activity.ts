@@ -1,5 +1,5 @@
 import "server-only";
-import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, exists, isNull, ne, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { z } from "zod";
 import { can, type Capability, type Viewer } from "@/lib/permissions";
@@ -236,9 +236,31 @@ export async function addNote(db: Db, actor: Viewer, input: unknown, ctx: Ctx = 
     let about: string | null = null;
     if (kind === "feedback") {
       about = aboutUserId ?? lead.assignedTo;
-      if (aboutUserId) {
-        const [user] = await tx.select({ id: users.id }).from(users).where(eq(users.id, aboutUserId));
-        if (!user) return fail("invalid", "That team member doesn't exist.");
+      // Feedback is for someone who has worked this lead: its owner now or before, or anyone who called it.
+      if (aboutUserId && aboutUserId !== lead.assignedTo) {
+        const [worked] = await tx
+          .select({ id: users.id })
+          .from(users)
+          .where(
+            and(
+              eq(users.id, aboutUserId),
+              or(
+                exists(
+                  tx
+                    .select({ one: sql`1` })
+                    .from(leadAssignments)
+                    .where(and(eq(leadAssignments.leadId, leadId), eq(leadAssignments.assignedTo, aboutUserId))),
+                ),
+                exists(
+                  tx
+                    .select({ one: sql`1` })
+                    .from(callLogs)
+                    .where(and(eq(callLogs.leadId, leadId), eq(callLogs.userId, aboutUserId))),
+                ),
+              ),
+            ),
+          );
+        if (!worked) return fail("invalid", "Feedback can only be for someone who has worked this lead.");
       }
     } else if (aboutUserId) {
       return fail("invalid", "Only feedback is addressed to someone.");
@@ -386,7 +408,8 @@ export type TimelineEntry =
       notes: string | null;
       durationSec: number | null;
     } & Voidable)
-  | ({ kind: "note" | "feedback"; id: string; at: Date; by: Person; about: Person | null; body: string } & Voidable)
+  /** `body` (like a call's `notes`) is null on a voided entry for anyone who can't void entries. */
+  | ({ kind: "note" | "feedback"; id: string; at: Date; by: Person; about: Person | null; body: string | null } & Voidable)
   | { kind: "status"; id: string; at: Date; by: Person; from: PipelineStatus; to: PipelineStatus; reason: string | null; viaCall: boolean }
   | {
       kind: "followUp";
@@ -413,7 +436,8 @@ const person = (id: string | null, name: string | null): Person | null => (id &&
 /**
  * Everything recorded on a lead, newest first, if the viewer may see the
  * lead. Callers see the lead's full call and note history, including
- * entries made by whoever had it before, but not the assignment history.
+ * entries made by whoever had it before, but not the assignment history,
+ * feedback addressed to someone else, or the text of voided entries.
  */
 export async function getLeadActivity(db: Db, viewer: Viewer, leadId: unknown): Promise<LeadActivity | null> {
   const parsed = z.uuid().safeParse(leadId);
@@ -429,6 +453,8 @@ export async function getLeadActivity(db: Db, viewer: Viewer, leadId: unknown): 
   const by = alias(users, "by_user");
   const voider = alias(users, "voider");
   const about = alias(users, "about_user");
+  const seesAllFeedback = can(viewer, "lead.addFeedback");
+  const seesVoidedText = can(viewer, "entries.void");
 
   const [calls, notes, statuses, follows, assignments] = await Promise.all([
     db
@@ -443,7 +469,14 @@ export async function getLeadActivity(db: Db, viewer: Viewer, leadId: unknown): 
       .innerJoin(by, eq(by.id, leadNotes.authorId))
       .leftJoin(about, eq(about.id, leadNotes.aboutUserId))
       .leftJoin(voider, eq(voider.id, leadNotes.voidedBy))
-      .where(eq(leadNotes.leadId, id)),
+      .where(
+        and(
+          eq(leadNotes.leadId, id),
+          seesAllFeedback
+            ? undefined
+            : or(ne(leadNotes.kind, "feedback"), isNull(leadNotes.aboutUserId), eq(leadNotes.aboutUserId, viewer.id)),
+        ),
+      ),
     db
       .select({ s: leadStatusChanges, byName: by.name })
       .from(leadStatusChanges)
@@ -477,7 +510,7 @@ export async function getLeadActivity(db: Db, viewer: Viewer, leadId: unknown): 
       outcome: c.outcome,
       statusBefore: c.statusBefore,
       statusAfter: c.statusAfter,
-      notes: c.notes,
+      notes: c.voidedAt && !seesVoidedText ? null : c.notes,
       durationSec: c.durationSec,
       voided: voided(c.voidedAt, c.voidedBy, voiderName, c.voidReason),
     })),
@@ -487,7 +520,7 @@ export async function getLeadActivity(db: Db, viewer: Viewer, leadId: unknown): 
       at: n.createdAt,
       by: { id: n.authorId, name: byName },
       about: person(n.aboutUserId, aboutName),
-      body: n.body,
+      body: n.voidedAt && !seesVoidedText ? null : n.body,
       voided: voided(n.voidedAt, n.voidedBy, voiderName, n.voidReason),
     })),
     ...statuses.map(({ s, byName }): TimelineEntry => ({
