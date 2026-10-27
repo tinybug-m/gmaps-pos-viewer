@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { LeadDataError, parseRawLeads } from "@/lib/validation";
+import { LeadDataError, parseLeadFile, parseRawLeads } from "@/lib/validation";
 import { crawledPoor, enrichedTrustpilot, noWebsite } from "../fixtures/leads";
 
 const parse = (records: unknown) => parseRawLeads(JSON.stringify(records));
@@ -62,5 +62,27 @@ describe("parseRawLeads", () => {
   it("omits outreach entirely when no enriched fields are present", () => {
     const [lead] = parse([crawledPoor]);
     expect(lead.outreach).toBeUndefined();
+  });
+});
+
+describe("parseLeadFile", () => {
+  const file = (records: unknown) => parseLeadFile(JSON.stringify(records));
+
+  it("keeps every valid record and reports each invalid one by position instead of stopping", () => {
+    const result = file([crawledPoor, { ...crawledPoor, name: "" }, noWebsite, { ...crawledPoor, seoStatus: "BAD" }, 7]);
+    expect(result.valid.map((r) => [r.index, r.raw.name])).toEqual([
+      [0, "Acme Plumbing & Heating"],
+      [2, "Delta Dental"],
+    ]);
+    expect(result.invalid.map((r) => r.index)).toEqual([1, 3, 4]);
+    expect(result.invalid[0].message).toMatch(/Business #2 is missing a "name"/);
+    expect(result.invalid[1].message).toMatch(/seoStatus/);
+    expect(result.invalid[2].message).toMatch(/Business #5 is not a valid object/);
+  });
+
+  it("still rejects a file that isn't a non-empty JSON array", () => {
+    expect(() => parseLeadFile("nope")).toThrow(LeadDataError);
+    expect(() => file({})).toThrow(/JSON array/);
+    expect(() => file([])).toThrow(/doesn't contain any businesses/);
   });
 });

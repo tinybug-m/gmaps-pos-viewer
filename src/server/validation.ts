@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { MAX_IMPORT_BYTES } from "@/lib/validation";
 import { CALL_OUTCOMES, PIPELINE_STATUSES, ROLES, requiresFollowUp } from "@/lib/workflow";
 
 /**
@@ -12,6 +13,9 @@ import { CALL_OUTCOMES, PIPELINE_STATUSES, ROLES, requiresFollowUp } from "@/lib
 export const MAX_NOTE_LENGTH = 5000;
 export const MAX_BULK = 500;
 export const MIN_PASSWORD_LENGTH = 12;
+export const MAX_IMPORT_RECORDS = 10_000;
+/** UTF-8 never uses fewer bytes than characters, so any file under the byte limit passes this. */
+export const MAX_IMPORT_CHARS = MAX_IMPORT_BYTES;
 
 const id = z.uuid();
 const text = (max: number) => z.string().trim().max(max);
@@ -108,6 +112,18 @@ export const voidEntryInput = z.object({
 });
 
 export const archiveLeadInput = z.object({ leadId: id });
+
+export const importInput = z.object({
+  // Only the base name is kept: it's shown in the import history and the audit log.
+  fileName: z
+    .string()
+    .transform((name) => name.split(/[\\/]/).pop()!.trim())
+    .pipe(z.string().min(1, "The file needs a name.").max(200, "That file name is too long.")),
+  json: z
+    .string()
+    .min(1, "The file is empty.")
+    .max(MAX_IMPORT_CHARS, "That file is too large to import in one go (3.5 MB). Split it into smaller files."),
+});
 
 /** First human-readable message from a failed parse. */
 export function firstIssue(error: z.ZodError): string {

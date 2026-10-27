@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=.env.local scripts/db-migrate.ts",
-    "db:create-admin": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/create-admin.ts"
+    "db:create-admin": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/create-admin.ts",
+    "db:import": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/import-leads.ts"
   },
   "dependencies": {
     "@vercel/functions": "^3.10.3",
