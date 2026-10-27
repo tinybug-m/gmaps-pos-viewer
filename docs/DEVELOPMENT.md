@@ -68,7 +68,7 @@ The matrix lives in [src/lib/permissions.ts](../src/lib/permissions.ts). The ser
 | See all leads and the team dashboard | ✓ | ✓ | – (own leads only; others are 404) |
 | Log calls, change status | ✓ | – | own leads |
 | Notes, follow-ups | ✓ | ✓ | own leads |
-| Feedback | ✓ | ✓ | reads feedback on own leads |
+| Feedback | ✓ | ✓ | reads feedback addressed to them (or to no one) on own leads |
 | Reopen a closed lead | ✓ | – | – |
 
 Callers are scoped in SQL, and ownership is checked again inside the transaction of every write.

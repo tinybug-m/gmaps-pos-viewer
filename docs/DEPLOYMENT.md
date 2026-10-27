@@ -54,6 +54,20 @@ The password is entered at a hidden prompt. After that, admins create every othe
 - Optional: turn on Vercel **Skew Protection** in project settings to keep old builds reachable briefly. It's not configured in `next.config.ts`.
 - Security headers, including CSP, are set in [next.config.ts](../next.config.ts). The CSP blocks the Vercel toolbar on previews, which is expected.
 
+## Security notes and known limits
+
+How sign-in is throttled:
+- **Per account:** after 10 failed attempts in a row, sign-in pauses for 15 minutes. Wrong current passwords on **Change password** count towards the same limit. The counter is reserved before the password is checked, so parallel requests can't get around it.
+- **Per IP address:** 50 attempts in a fixed 15-minute window, held in the `login_throttle` table (migration 0002). Successful sign-ins don't count. Crossing the limit is written to the audit log once, as `auth.ip_limited`.
+
+Known limits, accepted for now:
+- **Client IP comes from headers.** The app reads `x-real-ip`, then `x-forwarded-for` ([src/server/auth/login.ts](../src/server/auth/login.ts)). Vercel sets these itself, so they can be trusted there. Behind any other host or proxy, a client could forge them, which would defeat the per-IP limit and put false addresses in the audit log. The per-account lock still applies.
+- **4 MB request bodies.** `serverActions.bodySizeLimit` in [next.config.ts](../next.config.ts) is raised for lead imports, but Next applies it to every server action. Every action still requires a session, and inputs are validated with fixed limits (notes ≤ 5,000 characters, bulk actions ≤ 500 ids).
+- **Not every change is in the audit log.** Status changes are kept in `lead_status_changes`, calls in `call_logs` and notes in `lead_notes`, and the lead's history shows all of them. The audit log covers sign-in and security events, user management, imports, assignments, voids and archiving.
+- **No email-based password reset.** There's no email provider, so an admin resets passwords from **Users**.
+- **Failed sign-ins for unknown addresses** keep only the email domain in the audit log. For a real account, the account's email is recorded.
+- **Lead filtering runs in the browser** for admins and supervisors. That works up to roughly 5,000 leads; beyond that, move filters to SQL.
+
 ## Checklist of steps only you can do
 
 - [ ] Create the Neon database in Vercel. Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` for Production and Preview.
