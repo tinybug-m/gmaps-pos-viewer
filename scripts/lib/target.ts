@@ -26,3 +26,18 @@ export function describeTarget(url: string): { host: string; database: string; l
 export function isLocalHost(host: string): boolean {
   return host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "[::1]";
 }
+
+/**
+ * Scripts that change data run freely against a local database. Anything
+ * else (a Neon branch, production) must be named on the command line with
+ * --confirm=<database name>, so nobody writes to the wrong place by accident.
+ */
+export function requireConfirmedTarget(url: string, verb: string): void {
+  const target = describeTarget(url);
+  console.log(`Target: ${target.label}`);
+  const confirm = process.argv.find((a) => a.startsWith("--confirm="))?.slice("--confirm=".length);
+  if (!isLocalHost(target.host) && confirm !== target.database) {
+    console.error(`Refusing to ${verb} a non-local database without --confirm=${target.database}`);
+    process.exit(2);
+  }
+}
