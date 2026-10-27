@@ -398,7 +398,8 @@ export type TimelineEntry =
       state: "open" | "completed" | "cancelled";
       closedAt: Date | null;
     }
-  | { kind: "assignment"; id: string; at: Date; by: Person; to: Person; reason: string | null };
+  /** `to` is null when an admin unassigned the lead. */
+  | { kind: "assignment"; id: string; at: Date; by: Person; to: Person | null; reason: string | null };
 
 export interface LeadActivity {
   entries: TimelineEntry[];
@@ -455,10 +456,11 @@ export async function getLeadActivity(db: Db, viewer: Viewer, leadId: unknown): 
       .where(eq(followUps.leadId, id)),
     can(viewer, "leads.viewAll")
       ? db
-          .select({ a: leadAssignments, byName: by.name, toName: about.name })
+          .select({ a: leadAssignments, byName: by.name, toName: about.name, enderName: voider.name })
           .from(leadAssignments)
           .innerJoin(by, eq(by.id, leadAssignments.assignedBy))
           .innerJoin(about, eq(about.id, leadAssignments.assignedTo))
+          .leftJoin(voider, eq(voider.id, leadAssignments.endedBy))
           .where(eq(leadAssignments.leadId, id))
       : Promise.resolve([]),
   ]);
@@ -516,6 +518,17 @@ export async function getLeadActivity(db: Db, viewer: Viewer, leadId: unknown): 
       to: { id: a.assignedTo, name: toName },
       reason: a.reason,
     })),
+    // A stint that ended without another one starting at that moment was an unassignment.
+    ...assignments
+      .filter(({ a }) => a.endedAt && a.endedBy && !assignments.some(({ a: b }) => b.startedAt.getTime() === a.endedAt!.getTime()))
+      .map(({ a, enderName }): TimelineEntry => ({
+        kind: "assignment",
+        id: `${a.id}-end`,
+        at: a.endedAt!,
+        by: { id: a.endedBy!, name: enderName ?? "" },
+        to: null,
+        reason: null,
+      })),
   ];
   // Newest first; within one instant, a call sorts above the status change and follow-up it caused.
   const order: Record<TimelineEntry["kind"], number> = { call: 0, status: 1, followUp: 2, note: 3, feedback: 3, assignment: 4 };

@@ -290,7 +290,11 @@ describeDb("lead activity", () => {
       expect(await getLeadActivity(t.db, alice, lead.id)).toBeNull();
 
       const forAdmin = await getLeadActivity(t.db, admin, lead.id);
-      expect(forAdmin?.entries.filter((e) => e.kind === "assignment").map((e) => e.kind === "assignment" && e.to.id)).toEqual([bob.id, alice.id]);
+      expect(forAdmin?.entries.filter((e) => e.kind === "assignment").map((e) => e.kind === "assignment" && e.to?.id)).toEqual([bob.id, alice.id]);
+
+      await assignLeads(t.db, admin, { leadIds: [lead.id], toUserId: null, expected: { [lead.id]: bob.id } });
+      const [latest] = (await getLeadActivity(t.db, admin, lead.id))!.entries.filter((e) => e.kind === "assignment");
+      expect(latest).toMatchObject({ to: null, by: { id: admin.id } });
     });
 
     it("orders a caller's queue: overdue, today, fresh, in progress, later; closed leads drop out", async () => {
