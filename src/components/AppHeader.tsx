@@ -9,6 +9,7 @@ export function navFor(role: Role): NavItem[] {
   const items: (NavItem & { roles: Role[] })[] = [
     { href: "/queue", label: "Queue", roles: ["admin", "supervisor", "caller"] },
     { href: "/leads", label: "Leads", roles: ["admin", "supervisor", "caller"] },
+    { href: "/dashboard", label: "Dashboard", roles: ["admin", "supervisor", "caller"] },
     { href: "/admin/import", label: "Import", roles: ["admin"] },
     { href: "/admin/users", label: "Users", roles: ["admin"] },
   ];
