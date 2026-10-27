@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { safeNext } from "@/lib/safe-next";
 import { getAuth } from "@/server/auth/auth";
 import { attemptLogin, clientIp } from "@/server/auth/login";
 import { getDb } from "@/server/db/client";
@@ -9,12 +10,6 @@ import { getDb } from "@/server/db/client";
 export interface LoginState {
   error: string | null;
   email: string;
-}
-
-/** Only same-site paths, so ?next= can't send someone to another site after signing in. */
-function safeNext(value: FormDataEntryValue | null): string {
-  const next = typeof value === "string" ? value : "";
-  return next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/";
 }
 
 export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {

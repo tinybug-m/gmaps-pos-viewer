@@ -23,6 +23,17 @@ test("a wrong password shows one generic error", async ({ page }) => {
   await expect(page).toHaveURL(/\/login/);
 });
 
+test("a crafted ?next= can't send someone to another site after signing in", async ({ page, baseURL }) => {
+  const { email, password } = state.accounts.callerA;
+  await page.goto(`/login?next=${encodeURIComponent("/\t/evil.example/")}`);
+  await page.waitForLoadState("networkidle");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/queue$/);
+  expect(new URL(page.url()).origin).toBe(new URL(baseURL!).origin);
+});
+
 test("a caller lands on their queue and sees no admin pages", async ({ page }) => {
   await signIn(page, "callerA");
   await expect(page).toHaveURL(/\/queue$/);
