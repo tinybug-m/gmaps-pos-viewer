@@ -18,7 +18,7 @@ export default function IssueList({ issues }: { issues: ParsedIssue[] }) {
           />
           <span className="text-slate-700">
             {issue.text}
-            <span className="ml-2 text-xs font-medium text-slate-400">
+            <span className="ml-2 text-xs font-medium text-slate-500">
               {SEVERITY_LABEL[issue.severity]}
             </span>
           </span>

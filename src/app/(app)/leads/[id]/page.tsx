@@ -68,7 +68,7 @@ export default async function LeadPage(props: PageProps<"/leads/[id]">) {
         <Stat label="Status" value={<PipelineBadge status={w.pipelineStatus} />} />
         <Stat
           label="Assigned to"
-          value={w.assignee ? `${w.assignee.name}${w.assignee.isActive ? "" : " (deactivated)"}` : <span className="text-slate-400">Unassigned</span>}
+          value={w.assignee ? `${w.assignee.name}${w.assignee.isActive ? "" : " (deactivated)"}` : <span className="text-slate-500">Unassigned</span>}
         />
         <Stat label="Calls" value={activity.liveCalls} />
         <Stat
@@ -80,13 +80,13 @@ export default async function LeadPage(props: PageProps<"/leads/[id]">) {
                 <span className="block text-xs text-slate-500">{formatDateTime(w.lastCallAt)}</span>
               </>
             ) : (
-              <span className="text-slate-400">Never</span>
+              <span className="text-slate-500">Never</span>
             )
           }
         />
         <Stat
           label="Follow-up"
-          value={w.followUp ? <FollowUpBadge dueAt={w.followUp.dueAt} bucket={w.followUp.bucket} /> : <span className="text-slate-400">None</span>}
+          value={w.followUp ? <FollowUpBadge dueAt={w.followUp.dueAt} bucket={w.followUp.bucket} /> : <span className="text-slate-500">None</span>}
         />
       </dl>
 
@@ -132,7 +132,7 @@ export default async function LeadPage(props: PageProps<"/leads/[id]">) {
 function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</dt>
+      <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</dt>
       <dd className="mt-1 text-sm text-slate-800">{value}</dd>
     </div>
   );

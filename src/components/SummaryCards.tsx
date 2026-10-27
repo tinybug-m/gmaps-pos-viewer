@@ -28,22 +28,22 @@ const EMPHASIS_STYLES: Record<Emphasis, { card: string; value: string; label: st
   poor: {
     card: "bg-red-50/60 ring-1 ring-red-100",
     value: "text-red-800",
-    label: "text-red-700/80",
+    label: "text-red-700",
   },
   needsImprovement: {
     card: "bg-amber-50/60 ring-1 ring-amber-100",
     value: "text-amber-800",
-    label: "text-amber-700/80",
+    label: "text-amber-700",
   },
   noWebsite: {
     card: "bg-teal-50/60 ring-1 ring-teal-100",
     value: "text-teal-800",
-    label: "text-teal-700/80",
+    label: "text-teal-700",
   },
   neutral: {
     card: "bg-white ring-1 ring-slate-200",
     value: "text-slate-500",
-    label: "text-slate-400",
+    label: "text-slate-500",
   },
 };
 

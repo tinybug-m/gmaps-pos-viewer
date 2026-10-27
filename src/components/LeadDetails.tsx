@@ -30,7 +30,7 @@ export default function LeadDetails({ lead }: { lead: Omit<Lead, "searchText"> }
           <ExternalIcon />
         </a>
       ) : (
-        <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-3.5 py-2 text-sm font-medium text-slate-400">
+        <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-3.5 py-2 text-sm font-medium text-slate-500">
           No website
         </span>
       )}
@@ -116,7 +116,7 @@ export default function LeadDetails({ lead }: { lead: Omit<Lead, "searchText"> }
       </h3>
       <IssueList issues={lead.issues} />
       {!lead.crawlFailed && lead.status !== "NO_WEBSITE" && lead.issues.length > 0 && (
-        <p className="mt-4 text-xs text-slate-400">
+        <p className="mt-4 text-xs text-slate-500">
           These are technical/on-page signals detected by an automated scan, not a guarantee of
           search ranking performance.
         </p>
@@ -148,7 +148,7 @@ function OutreachSection({ outreach }: { outreach: LeadOutreach }) {
 
       {outreach.pitchAngle && (
         <div className="rounded-md bg-slate-50 px-3.5 py-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Pitch angle</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Pitch angle</p>
           <p className="mt-1 text-sm text-slate-800">{outreach.pitchAngle}</p>
         </div>
       )}
@@ -194,7 +194,7 @@ function OutreachSection({ outreach }: { outreach: LeadOutreach }) {
           label="People"
           value={
             people.length === 0 ? (
-              <span className="text-slate-400">No named contacts found</span>
+              <span className="text-slate-500">No named contacts found</span>
             ) : (
               <ul className="space-y-1.5">
                 {people.map(({ person, isDecisionMaker }, i) => (
@@ -253,7 +253,7 @@ function PhoneIcon() {
 function Detail({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</dt>
+      <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</dt>
       <dd className="mt-1 text-sm text-slate-800">{value}</dd>
     </div>
   );

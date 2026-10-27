@@ -9,8 +9,8 @@ const PIPELINE_STYLES: Record<PipelineStatus, string> = {
   callback: "bg-amber-50 text-amber-800",
   interested: "bg-emerald-50 text-emerald-800",
   closed_won: "bg-emerald-100 text-emerald-900",
-  closed_lost: "bg-slate-100 text-slate-500",
-  invalid: "bg-slate-100 text-slate-500",
+  closed_lost: "bg-slate-100 text-slate-600",
+  invalid: "bg-slate-100 text-slate-600",
   do_not_call: "bg-red-50 text-red-800",
 };
 

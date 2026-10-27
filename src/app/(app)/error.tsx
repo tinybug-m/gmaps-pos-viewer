@@ -27,7 +27,7 @@ export default function AppError({ error, retry }: { error: Error & { digest?: s
             ? "A new version went live while this page was open, so your last entry wasn't saved. Reload the page and enter it again."
             : "This page couldn't load or your last change didn't go through. Check the lead's history before entering it again, so nothing is logged twice."}
         </p>
-        {error.digest && <p className="font-mono text-xs text-slate-400">Reference: {error.digest}</p>}
+        {error.digest && <p className="font-mono text-xs text-slate-500">Reference: {error.digest}</p>}
         <div className="flex gap-2">
           <button type="button" className={buttonPrimary} onClick={() => window.location.reload()}>
             Reload page

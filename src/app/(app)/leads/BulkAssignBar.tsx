@@ -120,7 +120,7 @@ export default function BulkAssignBar({
         </div>
         <div className="flex flex-1 flex-col gap-1">
           <label htmlFor={`${ids}-reason`} className={label}>
-            Reason <span className="font-normal text-slate-400">(optional, kept in the history)</span>
+            Reason <span className="font-normal text-slate-500">(optional, kept in the history)</span>
           </label>
           <input
             id={`${ids}-reason`}

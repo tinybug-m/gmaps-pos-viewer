@@ -3,7 +3,7 @@ import type { LeadPriority } from "@/types/lead";
 const PRIORITY_STYLES: Record<LeadPriority, string> = {
   High: "bg-red-50 text-red-800",
   Medium: "bg-amber-50 text-amber-800",
-  Low: "bg-slate-100 text-slate-500",
+  Low: "bg-slate-100 text-slate-600",
   "Manual Review": "bg-sky-50 text-sky-700",
 };
 

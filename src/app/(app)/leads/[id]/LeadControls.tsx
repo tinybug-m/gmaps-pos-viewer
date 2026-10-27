@@ -274,7 +274,7 @@ export function VoidButton({ type, entryId }: { type: "call" | "note"; entryId: 
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className="text-xs font-medium text-slate-400 hover:text-red-700">
+      <button type="button" onClick={() => setOpen(true)} className="text-xs font-medium text-slate-500 hover:text-red-700">
         Void
       </button>
     );

@@ -173,7 +173,7 @@ export default function FilterBar({
 
         <span className="mx-1 h-5 w-px bg-slate-200" aria-hidden />
 
-        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Source</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Source</span>
         {SOURCES.map((source) => (
           <button
             key={source}
@@ -222,7 +222,7 @@ export default function FilterBar({
 function FilterRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div role="group" aria-label={label} className="flex flex-wrap items-center gap-2">
-      <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</span>
+      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</span>
       {children}
     </div>
   );

@@ -129,7 +129,7 @@ export default function CallLogger({
               }`}
             >
               {OUTCOME_LABEL[o]}
-              <kbd className={`text-xs ${outcome === o ? "text-slate-300" : "text-slate-400"}`} aria-hidden>
+              <kbd className={`text-xs ${outcome === o ? "text-slate-300" : "text-slate-500"}`} aria-hidden>
                 {i + 1}
               </kbd>
             </button>

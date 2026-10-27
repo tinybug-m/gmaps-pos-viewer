@@ -136,7 +136,7 @@ function Row({ row: r }: { row: AuditRow }) {
   return (
     <tr>
       <td className="whitespace-nowrap px-4 py-2 tabular-nums text-slate-500">{formatDateTime(r.at)}</td>
-      <td className="px-3 py-2 text-slate-700">{r.actor?.name ?? <span className="text-slate-400">Nobody signed in</span>}</td>
+      <td className="px-3 py-2 text-slate-700">{r.actor?.name ?? <span className="text-slate-500">Nobody signed in</span>}</td>
       <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-slate-800">{r.action}</td>
       <td className="px-3 py-2 text-xs">
         {leadId ? (
@@ -147,7 +147,7 @@ function Row({ row: r }: { row: AuditRow }) {
           <span className="text-slate-500">{r.entityType}</span>
         )}
         {r.entityId && (
-          <Link href={`/admin/audit?entity=${encodeURIComponent(r.entityId)}`} className="ml-1.5 font-mono text-slate-400 hover:text-slate-700" title="All entries for this">
+          <Link href={`/admin/audit?entity=${encodeURIComponent(r.entityId)}`} className="ml-1.5 font-mono text-slate-500 hover:text-slate-700" title="All entries for this">
             {r.entityId.slice(0, 8)}
           </Link>
         )}
@@ -160,7 +160,7 @@ function Row({ row: r }: { row: AuditRow }) {
             <pre className="whitespace-pre-wrap break-words font-mono">{JSON.stringify(r.before, null, 1)}</pre>
           </details>
         )}
-        {r.ip && <p className="text-slate-400">IP {r.ip}</p>}
+        {r.ip && <p className="text-slate-500">IP {r.ip}</p>}
       </td>
     </tr>
   );

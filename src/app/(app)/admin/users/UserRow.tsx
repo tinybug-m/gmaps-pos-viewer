@@ -95,7 +95,7 @@ export default function UserRow({ user, isSelf }: { user: UserDTO; isSelf: boole
               )}
             </p>
             <p className="truncate text-sm text-slate-500">{user.email}</p>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               Added {formatDate(new Date(user.createdAt))}
               {user.deactivatedAt && ` · deactivated ${formatDate(new Date(user.deactivatedAt))}`}
               {" · "}

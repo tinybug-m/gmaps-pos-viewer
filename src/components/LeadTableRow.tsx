@@ -63,7 +63,7 @@ export default function LeadTableRow({
         >
           {lead.name}
         </button>
-        <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-slate-400">
+        <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-slate-500">
           <span>
             {lead.category ? `${lead.category} · ` : ""}
             {lead.city}
@@ -77,7 +77,7 @@ export default function LeadTableRow({
             </span>{" "}
             <span className="tabular-nums">{lead.rating.toFixed(1)}</span>
             {lead.reviewCount !== null && (
-              <span className="text-slate-400"> ({lead.reviewCount.toLocaleString()})</span>
+              <span className="text-slate-500"> ({lead.reviewCount.toLocaleString()})</span>
             )}
           </p>
         )}
@@ -97,17 +97,17 @@ export default function LeadTableRow({
               )}
             </div>
           ) : (
-            <span className="text-slate-400">—</span>
+            <span className="text-slate-500">—</span>
           )}
         </td>
       )}
       <td className="whitespace-nowrap px-4 py-3">
         {lead.seoScore === null ? (
-          <span className="text-slate-400">—</span>
+          <span className="text-slate-500">—</span>
         ) : (
           <>
             <span className="font-semibold tabular-nums text-slate-800">{lead.seoScore}</span>
-            <span className="text-slate-400">/100</span>
+            <span className="text-slate-500">/100</span>
           </>
         )}
       </td>
@@ -135,12 +135,12 @@ export default function LeadTableRow({
               )}
             </span>
           ) : (
-            <span className="text-slate-400">Unassigned</span>
+            <span className="text-slate-500">Unassigned</span>
           )}
         </td>
       )}
       <td className="whitespace-nowrap px-4 py-3">
-        {w.followUp ? <FollowUpBadge dueAt={w.followUp.dueAt} bucket={w.followUp.bucket} /> : <span className="text-slate-400">—</span>}
+        {w.followUp ? <FollowUpBadge dueAt={w.followUp.dueAt} bucket={w.followUp.bucket} /> : <span className="text-slate-500">—</span>}
       </td>
       <td className="px-4 py-3 text-sm text-slate-600">
         {lead.status === "NO_WEBSITE" ? (
@@ -153,7 +153,7 @@ export default function LeadTableRow({
         ) : lead.outreach?.pitchAngle && primaryIssues.length === 0 ? (
           <span className="text-slate-600">{lead.outreach.pitchAngle}</span>
         ) : primaryIssues.length === 0 ? (
-          <span className="text-slate-400">No issues detected</span>
+          <span className="text-slate-500">No issues detected</span>
         ) : (
           <>
             <ul className="space-y-0.5">
@@ -164,7 +164,7 @@ export default function LeadTableRow({
               ))}
             </ul>
             {remaining > 0 && (
-              <span className="text-xs font-medium text-slate-400">+{remaining} more</span>
+              <span className="text-xs font-medium text-slate-500">+{remaining} more</span>
             )}
           </>
         )}
@@ -182,7 +182,7 @@ export default function LeadTableRow({
               <ExternalIcon />
             </a>
           ) : (
-            <span className="text-sm text-slate-400">No website</span>
+            <span className="text-sm text-slate-500">No website</span>
           )}
           <a
             href={lead.mapsUrl}

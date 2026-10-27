@@ -198,7 +198,7 @@ function PeopleTable({ people }: { people: PersonMetrics[] }) {
               </tr>
             )}
             {people.map((p) => (
-              <tr key={p.id} className={p.isActive ? "" : "text-slate-400"}>
+              <tr key={p.id} className={p.isActive ? "" : "text-slate-500"}>
                 <th scope="row" className="px-4 py-2 text-left font-medium">
                   {p.role === "supervisor" ? (
                     p.name

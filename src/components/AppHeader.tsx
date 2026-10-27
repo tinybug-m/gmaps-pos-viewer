@@ -36,7 +36,7 @@ export default function AppHeader({
         <div className="flex items-center gap-3 sm:ml-auto">
           <span className="text-sm text-slate-600">
             {viewer.name}{" "}
-            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-500">
+            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
               {ROLE_LABEL[viewer.role]}
             </span>
           </span>

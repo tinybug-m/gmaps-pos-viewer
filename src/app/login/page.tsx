@@ -17,7 +17,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         <div className="mt-6 rounded-lg bg-white p-6 ring-1 ring-slate-200">
           <LoginForm next={typeof next === "string" ? next : "/"} />
         </div>
-        <p className="mt-4 text-xs text-slate-400">Forgotten your password? Ask an admin to reset it.</p>
+        <p className="mt-4 text-xs text-slate-500">Forgotten your password? Ask an admin to reset it.</p>
       </div>
     </main>
   );
