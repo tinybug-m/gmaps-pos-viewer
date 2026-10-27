@@ -5,6 +5,7 @@ import {
   checkTransition,
   isConnect,
   isTerminal,
+  needsReview,
   PIPELINE_STATUSES,
   requiresFollowUp,
   suggestedStatus,
@@ -51,6 +52,10 @@ describe("rules", () => {
     expect(requiresFollowUp("no_answer", "callback")).toBe(true);
     expect(requiresFollowUp(null, "callback")).toBe(true);
     expect(requiresFollowUp("no_answer", "in_progress")).toBe(false);
+  });
+
+  it("flags outcomes a supervisor should review", () => {
+    expect(PIPELINE_STATUSES.filter(needsReview)).toEqual(["interested", "closed_won", "closed_lost", "do_not_call"]);
   });
 });
 

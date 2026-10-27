@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, isNotNull, isNull, type SQL } from "drizzle-orm";
+import { and, eq, isNotNull, isNull, notInArray, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { selectLeads, type LeadList, type LeadQuery } from "@/lib/lead-query";
 import {
@@ -11,8 +11,10 @@ import {
   hasOutreachData,
 } from "@/lib/leads";
 import { can, type Viewer } from "@/lib/permissions";
+import { buildQueue, type Queue } from "@/lib/queue";
 import { followUpBucket } from "@/lib/time";
 import type { Lead, LeadAssignee, LeadWorkflow, TeamLead } from "@/types/lead";
+import { isTerminal, PIPELINE_STATUSES } from "@/lib/workflow";
 import type { DbOrTx } from "../db/client";
 import { followUps, leads, users } from "../db/schema";
 
@@ -139,4 +141,22 @@ export async function getLeadForViewer(db: DbOrTx, viewer: Viewer, id: unknown, 
     : and(eq(leads.id, parsed.data), scope(viewer, false));
   const [lead] = await loadLeads(db, where, now);
   return lead ? toTeamLead(lead) : null;
+}
+
+const TERMINAL_STATUSES = PIPELINE_STATUSES.filter(isTerminal);
+
+/**
+ * The working queue of one team member: their live, open leads in the
+ * order to call them. Callers only get their own; admins and supervisors
+ * can look at anyone's. Returns null when the viewer may not see it.
+ */
+export async function getQueue(db: DbOrTx, viewer: Viewer, ownerId: string, now = new Date()): Promise<Queue | null> {
+  if (ownerId !== viewer.id && !can(viewer, "leads.viewAll")) return null;
+  if (!z.uuid().safeParse(ownerId).success) return null;
+  const rows = await loadLeads(
+    db,
+    and(eq(leads.assignedTo, ownerId), isNull(leads.archivedAt), notInArray(leads.pipelineStatus, TERMINAL_STATUSES)),
+    now,
+  );
+  return buildQueue(rows.map(toTeamLead));
 }

@@ -97,6 +97,13 @@ export function requiresFollowUp(outcome: CallOutcome | null, status: PipelineSt
   return outcome === "callback_requested" || status === "callback";
 }
 
+/** Statuses a supervisor should look at when a lead reaches them. Their feedback clears the flag. */
+const REVIEW: ReadonlySet<PipelineStatus> = new Set(["interested", "closed_won", "closed_lost", "do_not_call"]);
+
+export function needsReview(status: PipelineStatus): boolean {
+  return REVIEW.has(status);
+}
+
 export type TransitionCheck = { ok: true; changed: boolean } | { ok: false; reason: string };
 
 /**
