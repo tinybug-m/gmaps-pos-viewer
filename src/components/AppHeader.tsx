@@ -12,6 +12,7 @@ export function navFor(role: Role): NavItem[] {
     { href: "/dashboard", label: "Dashboard", roles: ["admin", "supervisor", "caller"] },
     { href: "/admin/import", label: "Import", roles: ["admin"] },
     { href: "/admin/users", label: "Users", roles: ["admin"] },
+    { href: "/admin/audit", label: "Audit", roles: ["admin"] },
   ];
   return items.filter((i) => i.roles.includes(role));
 }
