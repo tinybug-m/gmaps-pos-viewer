@@ -324,6 +324,17 @@ export const leadStatusChanges = pgTable(
   ],
 );
 
+/**
+ * Failed-sign-in counter per client address, in fixed windows. Mutable
+ * working state, not history: rows are reserved before a password is checked
+ * so parallel requests can't all slip under the limit.
+ */
+export const loginThrottle = pgTable("login_throttle", {
+  ip: text("ip").primaryKey(),
+  windowStart: ts("window_start").notNull().defaultNow(),
+  attempts: integer("attempts").notNull().default(0),
+});
+
 export const auditLog = pgTable(
   "audit_log",
   {
@@ -357,4 +368,5 @@ export const schema = {
   followUps,
   leadStatusChanges,
   auditLog,
+  loginThrottle,
 };

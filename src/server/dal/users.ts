@@ -5,6 +5,7 @@ import { z } from "zod";
 import { can, type Viewer } from "@/lib/permissions";
 import type { Role } from "@/lib/workflow";
 import { generateTempPassword } from "../auth/password";
+import { clearAccountFailures, LOCK_MINUTES, reserveAccountAttempt } from "../auth/throttle";
 import type { Db, DbOrTx } from "../db/client";
 import { isUniqueViolation } from "../db/errors";
 import { accounts, leads, sessions, users } from "../db/schema";
@@ -256,6 +257,11 @@ export async function changeOwnPassword(
   const { currentPassword, newPassword } = parsed.data;
   if (currentPassword === newPassword) return fail("invalid", "Choose a new password, not the current one.");
 
+  // Guessing the current password shares the sign-in counter, so a stolen
+  // session can't be used to brute-force it.
+  const attempt = await reserveAccountAttempt(db, eq(users.id, viewer.id));
+  if (!attempt) return fail("rate_limited", `Too many incorrect attempts. Try again in ${LOCK_MINUTES} minutes.`);
+
   const [account] = await db
     .select({ id: accounts.id, password: accounts.password })
     .from(accounts)
@@ -268,8 +274,19 @@ export async function changeOwnPassword(
       entityId: viewer.id,
       ip: ctx.ip,
     });
+    if (attempt.lockedUntil) {
+      await writeAudit(db, {
+        actorId: viewer.id,
+        action: "auth.locked",
+        entityType: "user",
+        entityId: viewer.id,
+        after: { lockedUntil: attempt.lockedUntil },
+        ip: ctx.ip,
+      });
+    }
     return fail("invalid", "Your current password is incorrect.");
   }
+  await clearAccountFailures(db, viewer.id);
   const hash = await hashPassword(newPassword);
 
   await db.transaction(async (tx) => {

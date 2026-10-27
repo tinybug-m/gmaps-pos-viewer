@@ -1,8 +1,8 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { IP_FAILURE_LIMIT, IP_LIMITED, LOCK_THRESHOLD, LOGIN_FAILED, attemptLogin } from "@/server/auth/login";
 import type { Auth } from "@/server/auth/auth";
-import { auditLog, sessions, users } from "@/server/db/schema";
+import { auditLog, loginThrottle, sessions, users } from "@/server/db/schema";
 import {
   bootstrapAdmin,
   changeOwnPassword,
@@ -256,6 +256,56 @@ describeDb("authentication and user management", () => {
     });
   });
 
+  describe("throttling under parallel requests", () => {
+    const failuresFor = async (userId: string) =>
+      (await t.db.select().from(auditLog).where(and(eq(auditLog.action, "auth.login_failed"), eq(auditLog.entityId, userId)))).map(
+        (r) => (r.after as { reason: string }).reason,
+      );
+
+    it("checks at most LOCK_THRESHOLD passwords for an account however many arrive at once", async () => {
+      const user = await createAccount(t.db, admin);
+      const results = await Promise.all(
+        Array.from({ length: LOCK_THRESHOLD * 3 }, (_, i) =>
+          attemptLogin({ db: t.db, auth }, { email: user.email, password: `wrong-guess-${i}` }, { ip: `192.0.2.${i + 1}`, headers: new Headers() }),
+        ),
+      );
+      expect(results.every((r) => !r.ok)).toBe(true);
+      const reasons = await failuresFor(user.id);
+      expect(reasons.filter((r) => r === "bad_password")).toHaveLength(LOCK_THRESHOLD);
+      expect(reasons.filter((r) => r === "locked")).toHaveLength(LOCK_THRESHOLD * 2);
+      expect(await t.db.select().from(auditLog).where(and(eq(auditLog.action, "auth.locked"), eq(auditLog.entityId, user.id)))).toHaveLength(1);
+      expect((await signIn(t.db, auth, user.email, user.password)).ok).toBe(false);
+    });
+
+    it("lets exactly IP_FAILURE_LIMIT attempts from one address through a burst, and audits the limit once", async () => {
+      const ip = "203.0.113.90";
+      const results = await Promise.all(
+        Array.from({ length: IP_FAILURE_LIMIT + 10 }, (_, i) =>
+          attemptLogin({ db: t.db, auth }, { email: `burst${i}@nowhere.example`, password: "irrelevant-guess" }, { ip, headers: new Headers() }),
+        ),
+      );
+      expect(results.filter((r) => !r.ok && r.code === "rate_limited")).toHaveLength(10);
+      expect(await t.db.select().from(auditLog).where(and(eq(auditLog.action, "auth.ip_limited"), eq(auditLog.ip, ip)))).toHaveLength(1);
+    });
+
+    it("doesn't count successful sign-ins against the address", async () => {
+      const user = await createAccount(t.db, admin);
+      const ip = "203.0.113.91";
+      for (let i = 0; i < IP_FAILURE_LIMIT + 5; i++) expect((await signIn(t.db, auth, user.email, user.password, ip)).ok).toBe(true);
+      await signIn(t.db, auth, user.email, "not-the-password!", ip);
+      const [row] = await t.db.select().from(loginThrottle).where(eq(loginThrottle.ip, ip));
+      expect(row.attempts).toBe(1);
+    });
+
+    it("keeps only the domain of an address that matches no account", async () => {
+      const ip = "203.0.113.92";
+      await signIn(t.db, auth, "someone.typo@unknown.example", "irrelevant-guess", ip);
+      const [row] = await t.db.select().from(auditLog).where(and(eq(auditLog.action, "auth.login_failed"), eq(auditLog.ip, ip)));
+      expect(row.after).toEqual({ emailDomain: "unknown.example", reason: "unknown_email" });
+      expect(JSON.stringify(row)).not.toContain("someone.typo");
+    });
+  });
+
   describe("changing your own password", () => {
     it("checks the current password, keeps this session and ends the others", async () => {
       const user = await createAccount(t.db, admin);
@@ -276,6 +326,27 @@ describeDb("authentication and user management", () => {
       expect(row.mustChangePassword).toBe(false);
       expect((await signIn(t.db, auth, user.email, "a brand new passphrase")).ok).toBe(true);
       expect((await signIn(t.db, auth, user.email, user.password)).ok).toBe(false);
+    });
+    it("pauses after repeated wrong current passwords, sharing the sign-in counter", async () => {
+      const user = await createAccount(t.db, admin);
+      const here = await signIn(t.db, auth, user.email, user.password);
+      if (!here.ok) throw new Error("sign-in failed");
+      const viewer = { id: user.id, role: user.role, sessionId: (await session(here.headers))!.session.id };
+      const results = await Promise.all(
+        Array.from({ length: LOCK_THRESHOLD * 2 }, (_, i) =>
+          changeOwnPassword(t.db, viewer, { currentPassword: `wrong-current-${i}`, newPassword: "a brand new passphrase" }),
+        ),
+      );
+      expect(results.filter((r) => !r.ok && r.code === "invalid")).toHaveLength(LOCK_THRESHOLD);
+      expect(results.filter((r) => !r.ok && r.code === "rate_limited")).toHaveLength(LOCK_THRESHOLD);
+      expect(await changeOwnPassword(t.db, viewer, { currentPassword: user.password, newPassword: "a brand new passphrase" })).toMatchObject({
+        ok: false,
+        code: "rate_limited",
+      });
+      expect(await t.db.select().from(auditLog).where(and(eq(auditLog.action, "auth.locked"), eq(auditLog.entityId, user.id)))).toHaveLength(1);
+      // The old password still works once the pause is over.
+      await t.db.update(users).set({ lockedUntil: new Date(Date.now() - 1000) }).where(eq(users.id, user.id));
+      expect((await signIn(t.db, auth, user.email, user.password)).ok).toBe(true);
     });
   });
 });

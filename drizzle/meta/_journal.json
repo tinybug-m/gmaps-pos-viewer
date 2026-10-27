@@ -15,6 +15,13 @@
       "when": 1793092747968,
       "tag": "0001_history_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793115217777,
+      "tag": "0002_login_throttle",
+      "breakpoints": true
     }
   ]
 }

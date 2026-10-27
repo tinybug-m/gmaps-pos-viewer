@@ -8,11 +8,17 @@ import { writeAudit } from "../dal/audit";
 import { fail, type Result } from "../result";
 import { loginInput } from "../validation";
 import type { Auth } from "./auth";
+import {
+  clearAccountFailures,
+  IP_FAILURE_LIMIT,
+  LOCK_MINUTES,
+  LOCK_THRESHOLD,
+  releaseIpAttempt,
+  reserveAccountAttempt,
+  reserveIpAttempt,
+} from "./throttle";
 
-export const LOCK_THRESHOLD = 10;
-export const LOCK_MINUTES = 15;
-/** Failed sign-ins from one IP address, across all accounts, before that address is paused. */
-export const IP_FAILURE_LIMIT = 50;
+export { IP_FAILURE_LIMIT, LOCK_MINUTES, LOCK_THRESHOLD };
 
 /**
  * One message for every failure, so the form never reveals whether an
@@ -45,6 +51,8 @@ export async function attemptLogin(
   const { email, password } = parsed.data;
 
   if (ctx.ip) {
+    const attempts = await reserveIpAttempt(db, ctx.ip);
+    // The audit trail is a second, slower source for the same limit.
     const [{ failures }] = await db
       .select({ failures: count() })
       .from(auditLog)
@@ -55,30 +63,37 @@ export async function attemptLogin(
           gt(auditLog.createdAt, sql`now() - make_interval(mins => ${LOCK_MINUTES})`),
         ),
       );
-    if (failures >= IP_FAILURE_LIMIT) return fail("rate_limited", IP_LIMITED);
+    if (attempts > IP_FAILURE_LIMIT || failures >= IP_FAILURE_LIMIT) {
+      if (attempts === IP_FAILURE_LIMIT + 1) {
+        await writeAudit(db, { actorId: null, action: "auth.ip_limited", entityType: "ip", entityId: ctx.ip, ip: ctx.ip });
+      }
+      return fail("rate_limited", IP_LIMITED);
+    }
   }
 
-  const [user] = await db
-    .select({ id: users.id, isActive: users.isActive, lockedUntil: users.lockedUntil })
-    .from(users)
-    .where(eq(users.email, email));
+  // Takes a slot before the password is checked; see ./throttle.
+  const attempt = await reserveAccountAttempt(db, eq(users.email, email));
 
-  const failed = async (reason: string) => {
+  const failed = async (userId: string | null, reason: string) => {
     await writeAudit(db, {
       actorId: null,
       action: "auth.login_failed",
       entityType: "user",
-      entityId: user?.id ?? null,
-      after: { email, reason },
+      entityId: userId,
+      // An address that matches no account may be someone's mistyped
+      // address or a guess list; keep only its domain.
+      after: userId ? { email, reason } : { emailDomain: email.split("@").pop() ?? "", reason },
       ip: ctx.ip,
     });
     return fail("invalid", LOGIN_FAILED);
   };
 
-  if (user && (!user.isActive || (user.lockedUntil && user.lockedUntil > new Date()))) {
+  if (!attempt) {
+    const [user] = await db.select({ id: users.id, isActive: users.isActive }).from(users).where(eq(users.email, email));
     // Same work as a real check, so timing doesn't give the state away.
     await hashPassword(password);
-    return failed(user.isActive ? "locked" : "inactive");
+    if (!user) return failed(null, "unknown_email");
+    return failed(user.id, user.isActive ? "locked" : "inactive");
   }
 
   let responseHeaders: Headers;
@@ -93,29 +108,21 @@ export async function attemptLogin(
     userId = res.response.user.id;
   } catch (err) {
     if (!(err instanceof APIError)) throw err;
-    if (!user) return failed("unknown_email");
-    const [after] = await db
-      .update(users)
-      .set({
-        failedLogins: sql`case when ${users.failedLogins} + 1 >= ${LOCK_THRESHOLD} then 0 else ${users.failedLogins} + 1 end`,
-        lockedUntil: sql`case when ${users.failedLogins} + 1 >= ${LOCK_THRESHOLD} then now() + make_interval(mins => ${LOCK_MINUTES}) else ${users.lockedUntil} end`,
-      })
-      .where(eq(users.id, user.id))
-      .returning({ failedLogins: users.failedLogins, lockedUntil: users.lockedUntil });
-    if (after.failedLogins === 0 && after.lockedUntil) {
+    if (attempt.lockedUntil) {
       await writeAudit(db, {
         actorId: null,
         action: "auth.locked",
         entityType: "user",
-        entityId: user.id,
-        after: { lockedUntil: after.lockedUntil },
+        entityId: attempt.userId,
+        after: { lockedUntil: attempt.lockedUntil },
         ip: ctx.ip,
       });
     }
-    return failed("bad_password");
+    return failed(attempt.userId, "bad_password");
   }
 
-  await db.update(users).set({ failedLogins: 0, lockedUntil: null }).where(eq(users.id, userId));
+  await clearAccountFailures(db, userId);
+  if (ctx.ip) await releaseIpAttempt(db, ctx.ip);
   await writeAudit(db, { actorId: userId, action: "auth.login", entityType: "user", entityId: userId, ip: ctx.ip });
   return { ok: true, userId, responseHeaders };
 }

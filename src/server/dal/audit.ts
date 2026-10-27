@@ -12,7 +12,7 @@ import { auditLog, users } from "../db/schema";
 export interface AuditEntry {
   actorId: string | null;
   action: string;
-  entityType: "user" | "lead" | "import" | "call" | "note" | "session";
+  entityType: "user" | "lead" | "import" | "call" | "note" | "session" | "ip";
   entityId?: string | null;
   before?: unknown;
   after?: unknown;
