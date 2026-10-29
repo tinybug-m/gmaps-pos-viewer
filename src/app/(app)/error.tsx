@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { unstable_isUnrecognizedActionError } from "next/navigation";
 import { useEffect } from "react";
 
@@ -25,10 +26,10 @@ export default function AppError({ error, retry }: { error: Error & { digest?: s
         <p className="text-sm text-slate-600">
           {stale
             ? "A new version went live while this page was open, so your last entry wasn't saved. Reload the page and enter it again."
-            : "This page couldn't load or your last change didn't go through. Check the lead's history before entering it again, so nothing is logged twice."}
+            : "This page couldn't load or your last change didn't go through. If you were saving something, check that it went through before entering it again, so nothing is logged twice."}
         </p>
         {error.digest && <p className="font-mono text-xs text-slate-500">Reference: {error.digest}</p>}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button type="button" className={buttonPrimary} onClick={() => window.location.reload()}>
             Reload page
           </button>
@@ -37,6 +38,9 @@ export default function AppError({ error, retry }: { error: Error & { digest?: s
               Try again
             </button>
           )}
+          <Link href="/" className={buttonSecondary}>
+            Go to home
+          </Link>
         </div>
       </div>
     </div>

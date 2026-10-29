@@ -145,7 +145,7 @@ export default function FilterBar({
 
         <ToggleChip label="Show good websites" active={filters.statuses.has("GOOD")} onClick={() => toggleStatus("GOOD")} />
         <ToggleChip
-          label="Include crawl failures"
+          label="Include sites we couldn't check"
           active={filters.statuses.has("CRAWL_FAILED")}
           onClick={() => toggleStatus("CRAWL_FAILED")}
         />

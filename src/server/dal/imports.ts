@@ -5,7 +5,7 @@ import { computeSource, legacySlug } from "@/lib/leads";
 import { can, type Viewer } from "@/lib/permissions";
 import { LeadDataError, parseLeadFile } from "@/lib/validation";
 import type { RawLead } from "@/types/lead";
-import type { Db, DbOrTx } from "../db/client";
+import type { Db, DbOrTx, Tx } from "../db/client";
 import { importBatches, leads, users } from "../db/schema";
 import { fail, type Result } from "../result";
 import { firstIssue, importInput, MAX_IMPORT_RECORDS } from "../validation";
@@ -187,14 +187,34 @@ export async function commitImport(
   const parsed = importInput.safeParse(input);
   if (!parsed.success) return fail("invalid", firstIssue(parsed.error));
   const { fileName, json } = parsed.data;
+  return db.transaction((tx) => importInTx(tx, actor, fileName, json, ctx));
+}
 
-  return db.transaction(async (tx) => {
+/**
+ * The body of `commitImport`, for callers that already hold a transaction and
+ * have validated the input. With `insertOnly`, businesses already in the
+ * database are left exactly as they are and only new ones are added.
+ */
+export async function importInTx(
+  tx: Tx,
+  actor: Viewer,
+  fileName: string,
+  json: string,
+  ctx: { ip?: string | null } = {},
+  opts: { insertOnly?: boolean } = {},
+): Promise<Result<{ batchId: string; preview: ImportPreview }>> {
+  {
     // One import at a time: two overlapping files are applied one after the
     // other instead of racing on the same dedupe keys.
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext('leads.import'))`);
     const planned = await planImport(tx, fileName, json);
     if (!planned.ok) return planned;
-    const { preview, inserts, updates } = planned.plan;
+    const { preview, inserts } = planned.plan;
+    const updates = opts.insertOnly ? [] : planned.plan.updates;
+    if (opts.insertOnly) {
+      preview.unchanged += preview.updated;
+      preview.updated = 0;
+    }
     if (preview.inserted + preview.updated + preview.unchanged === 0) {
       return fail("invalid", "None of the records in this file can be imported.");
     }
@@ -265,7 +285,7 @@ export async function commitImport(
     for (const chunk of chunks(audit, CHUNK)) await writeAudit(tx, chunk);
 
     return { ok: true, batchId: batch.id, preview };
-  });
+  }
 }
 
 export async function listImportBatches(db: Db, actor: Viewer, limit = 20): Promise<ImportBatchDTO[] | null> {

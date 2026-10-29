@@ -22,7 +22,15 @@ export default function CreateUserForm() {
           <label htmlFor="new-user-name" className={label}>
             Name
           </label>
-          <input id="new-user-name" name="name" required maxLength={100} autoComplete="off" className={input} />
+          <input
+            id="new-user-name"
+            name="name"
+            required
+            maxLength={100}
+            autoComplete="off"
+            defaultValue={state.values?.name}
+            className={input}
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="new-user-email" className={label}>
@@ -35,6 +43,7 @@ export default function CreateUserForm() {
             required
             maxLength={254}
             autoComplete="off"
+            defaultValue={state.values?.email}
             className={input}
           />
         </div>
@@ -42,7 +51,7 @@ export default function CreateUserForm() {
           <label htmlFor="new-user-role" className={label}>
             Role
           </label>
-          <select id="new-user-role" name="role" defaultValue="caller" className={input}>
+          <select id="new-user-role" name="role" defaultValue={state.values?.role ?? "caller"} className={input}>
             {ROLES.map((r) => (
               <option key={r} value={r}>
                 {ROLE_LABEL[r]}

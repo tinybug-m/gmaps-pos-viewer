@@ -129,6 +129,8 @@ export const assignFileInput = importInput.extend({
   toUserId: id,
   /** The lead count the admin confirmed in the preview; a different count on commit means the data moved. */
   expectedAssign: z.number().int().min(0).optional(),
+  /** Also add the businesses in the file that aren't in the system yet, then assign them too. */
+  importMissing: z.boolean().optional(),
 });
 
 /** First human-readable message from a failed parse. */

@@ -157,7 +157,7 @@ export default function ImportForm() {
           </ul>
 
           {preview.problems.length > 0 && (
-            <details className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-100">
+            <details open={changes === 0 || preview.invalid > 0} className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-100">
               <summary className="cursor-pointer font-medium">
                 {plural(preview.invalid + preview.duplicates, "row")} will be skipped
               </summary>
@@ -188,7 +188,11 @@ export default function ImportForm() {
               Cancel
             </button>
             {changes === 0 && (
-              <p className="text-sm text-slate-500">Every valid record in this file is already imported and up to date.</p>
+              <p className="text-sm text-slate-500">
+                {preview.invalid + preview.duplicates > 0 && preview.inserted + preview.updated + preview.unchanged === 0
+                  ? "No record in this file could be imported. See the reasons above."
+                  : "Every valid record in this file is already imported and up to date."}
+              </p>
             )}
           </div>
         </section>

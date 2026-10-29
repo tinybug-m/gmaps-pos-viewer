@@ -37,6 +37,7 @@ export default function LeadDetailDrawer({
       <button
         type="button"
         aria-label="Close details"
+        tabIndex={-1}
         onClick={onClose}
         className="absolute inset-0 bg-slate-900/40"
       />

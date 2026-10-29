@@ -15,18 +15,19 @@ export interface CreateUserState {
   error: string | null;
   /** Shown once, straight after the account is created. */
   created: { name: string; email: string; tempPassword: string } | null;
+  /** What was typed, handed back on an error so the form isn't wiped. */
+  values?: { name: string; email: string; role: string };
 }
 
 export async function createUserAction(_prev: CreateUserState, formData: FormData): Promise<CreateUserState> {
   const viewer = await requireViewer();
   if (!can(viewer, "users.manage")) return { error: FORBIDDEN.message, created: null };
-  const result = await createUser(
-    getDb(),
-    viewer,
-    { name: formData.get("name"), email: formData.get("email"), role: formData.get("role") },
-    { ip: clientIp(await headers()) },
-  );
-  if (!result.ok) return { error: result.message, created: null };
+  const typed = { name: formData.get("name"), email: formData.get("email"), role: formData.get("role") };
+  const result = await createUser(getDb(), viewer, typed, { ip: clientIp(await headers()) });
+  if (!result.ok) {
+    const text = (v: FormDataEntryValue | null) => (typeof v === "string" ? v : "");
+    return { error: result.message, created: null, values: { name: text(typed.name), email: text(typed.email), role: text(typed.role) } };
+  }
   refresh();
   return { error: null, created: { name: result.user.name, email: result.user.email, tempPassword: result.tempPassword } };
 }

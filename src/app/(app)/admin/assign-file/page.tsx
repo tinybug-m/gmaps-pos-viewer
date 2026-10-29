@@ -24,7 +24,7 @@ export default async function AssignFilePage() {
         <h1 className="mt-2 text-2xl font-semibold text-slate-800">Assign a file</h1>
         <p className="mt-1 max-w-2xl text-sm text-slate-500">
           Give every unassigned lead in an export file to one team member. Businesses are matched to leads already
-          in the system, so import the file first. Leads that belong to someone else are never taken from them.
+          in the system, and any that are missing can be imported at the same time. Leads that belong to someone else are never taken from them.
         </p>
       </header>
 

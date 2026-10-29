@@ -28,6 +28,7 @@ function lead(id: string, workflow: Partial<LeadWorkflow> = {}, raw: Partial<Raw
       lastOutcome: null,
       lastCallAt: null,
       followUp: null,
+      addedAt: new Date("2026-01-01T00:00:00Z"),
       reviewRequested: false,
       archived: false,
       version: 1,

@@ -44,7 +44,10 @@ export default function CallLogger({
   const notesId = useId();
   const statusId = useId();
   const [outcome, setOutcome] = useState<CallOutcome | null>(null);
-  const [newStatus, setNewStatus] = useState<PipelineStatus>(status);
+  const [chosenStatus, setNewStatus] = useState<PipelineStatus>(status);
+  // After a refresh the lead may have moved on; fall back to its current status instead of submitting one that is no longer offered.
+  const allowedStatuses = PIPELINE_STATUSES.filter((s) => checkTransition(status, s, role).ok);
+  const newStatus = allowedStatuses.includes(chosenStatus) ? chosenStatus : status;
   const [followUpAt, setFollowUpAt] = useState<Date | null>(null);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +97,8 @@ export default function CallLogger({
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        // Inside another form (a note, a void reason) the shortcut belongs to that form.
+        if ((e.target as HTMLElement).closest("form")) return;
         e.preventDefault();
         save(nextLeadId !== null);
         return;
@@ -149,7 +154,7 @@ export default function CallLogger({
               value={newStatus}
               onChange={(e) => setNewStatus(e.target.value as PipelineStatus)}
             >
-              {PIPELINE_STATUSES.filter((s) => checkTransition(status, s, role).ok).map((s) => (
+              {allowedStatuses.map((s) => (
                 <option key={s} value={s}>
                   {PIPELINE_LABEL[s]}
                   {s === status ? " (unchanged)" : ""}
@@ -196,6 +201,7 @@ export default function CallLogger({
         >
           {pending ? "Saving…" : "Save"}
         </button>
+        {!outcome && <span className="self-center text-xs text-slate-500">Pick what happened to save. Ctrl+Enter saves.</span>}
         {needsDate && !followUpAt && <span className="self-center text-xs text-slate-500">Pick a follow-up time to save.</span>}
       </div>
     </section>

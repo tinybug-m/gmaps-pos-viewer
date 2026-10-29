@@ -15,7 +15,7 @@ import type { Lead, LeadAssignee, LeadSource, LeadStatus, LeadWorkflow, TeamLead
 
 export const PAGE_SIZE = 50;
 
-export type WorkflowSortKey = "pipeline" | "assignee" | "followUp" | "lastCall";
+export type WorkflowSortKey = "pipeline" | "assignee" | "followUp" | "lastCall" | "added";
 export type LeadSortKey = SortKey | WorkflowSortKey;
 
 export interface LeadSort {
@@ -62,7 +62,7 @@ const LEAD_STATUSES: readonly LeadStatus[] = ["POOR", "NEEDS_IMPROVEMENT", "NO_W
 const SOURCES: readonly LeadSource[] = ["google-maps", "trustpilot"];
 const BANDS: readonly ScoreBand[] = SCORE_BANDS.map((b) => b.key);
 export const DUE_BUCKETS: readonly FollowUpBucket[] = ["overdue", "today", "upcoming"];
-const WORKFLOW_SORT_KEYS: readonly WorkflowSortKey[] = ["pipeline", "assignee", "followUp", "lastCall"];
+const WORKFLOW_SORT_KEYS: readonly WorkflowSortKey[] = ["pipeline", "assignee", "followUp", "lastCall", "added"];
 const SORT_KEYS: readonly LeadSortKey[] = [...(Object.keys(INITIAL_DIRECTION) as SortKey[]), ...WORKFLOW_SORT_KEYS];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Caps on what a URL can ask for, so a crafted link can't make the server do unbounded work. */
@@ -74,6 +74,7 @@ const WORKFLOW_INITIAL_DIRECTION: Record<WorkflowSortKey, SortDirection> = {
   assignee: "asc",
   followUp: "asc",
   lastCall: "desc",
+  added: "desc",
 };
 
 function isWorkflowKey(key: LeadSortKey): key is WorkflowSortKey {
@@ -218,6 +219,8 @@ function workflowValue(lead: TeamLead, key: WorkflowSortKey): number | string | 
       return w.followUp?.dueAt.getTime() ?? null;
     case "lastCall":
       return w.lastCallAt?.getTime() ?? null;
+    case "added":
+      return w.addedAt.getTime();
   }
 }
 

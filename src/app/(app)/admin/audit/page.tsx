@@ -58,9 +58,9 @@ export default async function AuditPage(props: PageProps<"/admin/audit">) {
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+        <label className="flex w-full flex-col gap-1 text-xs font-medium text-slate-600 sm:w-auto">
           Lead, user or entry id
-          <input name="entity" defaultValue={entity ?? ""} className={`${input} w-80`} placeholder="Paste an id" />
+          <input name="entity" defaultValue={entity ?? ""} className={`${input} w-full sm:w-80`} placeholder="Paste an id" />
         </label>
         <button type="submit" className={buttonSecondary}>
           Filter
@@ -97,7 +97,7 @@ export default async function AuditPage(props: PageProps<"/admin/audit">) {
             {page.rows.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
-                  No entries.
+                  {category || entity ? "No entries match this filter." : "No entries yet."}
                 </td>
               </tr>
             )}

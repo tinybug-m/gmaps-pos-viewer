@@ -26,6 +26,7 @@ export default function AssignFileForm({ assignees }: { assignees: { id: string;
   const [userId, setUserId] = useState("");
   const [preview, setPreview] = useState<FileAssignPreview | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [importMissing, setImportMissing] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [step, setStep] = useState<"check" | "assign" | null>(null);
@@ -39,6 +40,7 @@ export default function AssignFileForm({ assignees }: { assignees: { id: string;
     setUserId(nextUser);
     setPreview(null);
     setConfirming(false);
+    setImportMissing(true);
     setSuccess(null);
     setError(nextFile && nextFile.size > MAX_IMPORT_BYTES ? TOO_LARGE : null);
   }
@@ -83,7 +85,9 @@ export default function AssignFileForm({ assignees }: { assignees: { id: string;
   function assign() {
     if (!preview) return;
     run("assign", async (form) => {
-      form.set("expectedAssign", String(preview.toAssign));
+      const adding = importMissing ? preview.notImported : 0;
+      form.set("expectedAssign", String(preview.toAssign + adding));
+      if (importMissing) form.set("importMissing", "1");
       const result = await commitFileAssignmentAction(form);
       if (!result.ok) {
         setError(result.message);
@@ -92,12 +96,15 @@ export default function AssignFileForm({ assignees }: { assignees: { id: string;
       }
       const p = result.preview;
       clear();
-      setSuccess(`Assigned ${plural(p.toAssign, "lead")} from ${p.fileName} to ${p.assignee.name}.`);
+      setSuccess(`Assigned ${plural(p.toAssign, "lead")}${adding ? ` (${adding.toLocaleString("en-GB")} newly imported)` : ""} from ${p.fileName} to ${p.assignee.name}.`);
     });
   }
 
   const targetName = assignees.find((a) => a.id === userId)?.name ?? "";
-  const skipped = preview ? preview.ownedByOthers + preview.archived + preview.notImported + preview.invalid + preview.duplicates : 0;
+  const adding = preview && importMissing ? preview.notImported : 0;
+  const willAssign = preview ? preview.toAssign + adding : 0;
+  const problems = preview ? preview.problems.filter((p) => !(adding && p.message.includes("isn't in the system yet"))) : [];
+  const skipped = preview ? preview.ownedByOthers + preview.archived + (preview.notImported - adding) + preview.invalid + preview.duplicates : 0;
 
   return (
     <div className="flex flex-col gap-5">
@@ -151,34 +158,56 @@ export default function AssignFileForm({ assignees }: { assignees: { id: string;
           </div>
 
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Count label="To assign" value={preview.toAssign} hint={`to ${preview.assignee.name}`} />
+            <Count label="To assign" value={willAssign} hint={`to ${preview.assignee.name}`} />
             <Count label="Already theirs" value={preview.alreadyAssigned} />
             <Count label="Owned by others" value={preview.ownedByOthers} hint="left alone" tone={preview.ownedByOthers ? "warn" : undefined} />
-            <Count label="Not imported" value={preview.notImported} hint="skipped" tone={preview.notImported ? "warn" : undefined} />
+            <Count
+              label="Not in system"
+              value={preview.notImported}
+              hint={importMissing ? "will be imported" : "skipped"}
+              tone={preview.notImported && !importMissing ? "warn" : undefined}
+            />
             <Count label="Archived" value={preview.archived} hint="skipped" tone={preview.archived ? "warn" : undefined} />
             <Count label="Invalid" value={preview.invalid} hint="skipped" tone={preview.invalid ? "warn" : undefined} />
             <Count label="Duplicates" value={preview.duplicates} hint="skipped" tone={preview.duplicates ? "warn" : undefined} />
           </dl>
 
-          {preview.problems.length > 0 && (
+          {problems.length > 0 && (
             <details className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-100">
               <summary className="cursor-pointer font-medium">{plural(skipped, "row")} will be skipped</summary>
               <ul className="mt-2 max-h-64 space-y-1 overflow-y-auto">
-                {preview.problems.map((p) => (
+                {problems.map((p) => (
                   <li key={p.row}>
                     <span className="font-medium">Row {p.row}:</span> {p.message}
                   </li>
                 ))}
               </ul>
-              {skipped > preview.problems.length && (
-                <p className="mt-2 text-amber-800">…and {(skipped - preview.problems.length).toLocaleString("en-GB")} more.</p>
+              {skipped > problems.length && (
+                <p className="mt-2 text-amber-800">…and {(skipped - problems.length).toLocaleString("en-GB")} more.</p>
               )}
             </details>
           )}
 
+          {preview.notImported > 0 && (
+            <label className="flex items-start gap-2 rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-700 ring-1 ring-slate-200">
+              <input
+                type="checkbox"
+                checked={importMissing}
+                disabled={isPending || confirming}
+                onChange={(e) => setImportMissing(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 accent-slate-800"
+              />
+              <span>
+                Also import the {plural(preview.notImported, "business", "businesses")} not in the system yet, and assign{" "}
+                {preview.notImported === 1 ? "it" : "them"} too.
+                <span className="block text-xs text-slate-500">Leads already in the system are not changed.</span>
+              </span>
+            </label>
+          )}
+
           {confirming && (
             <p className="text-sm text-slate-600" aria-live="polite">
-              {targetName || preview.assignee.name} will see {plural(preview.toAssign, "lead")} from {preview.fileName} in their
+              {targetName || preview.assignee.name} will see {plural(willAssign, "lead")} from {preview.fileName} in their
               list straight away. All of them are assigned, or none are.
             </p>
           )}
@@ -186,11 +215,11 @@ export default function AssignFileForm({ assignees }: { assignees: { id: string;
           <div className="flex flex-wrap items-center gap-2">
             {confirming ? (
               <button type="button" className={buttonPrimary} disabled={isPending} onClick={assign}>
-                {isPending && step === "assign" ? "Assigning…" : `Assign ${plural(preview.toAssign, "lead")} to ${preview.assignee.name}`}
+                {isPending && step === "assign" ? "Assigning…" : `Assign ${plural(willAssign, "lead")} to ${preview.assignee.name}`}
               </button>
             ) : (
-              <button type="button" className={buttonPrimary} disabled={preview.toAssign === 0} onClick={() => setConfirming(true)}>
-                {preview.toAssign === 0 ? "Nothing to assign" : "Continue"}
+              <button type="button" className={buttonPrimary} disabled={willAssign === 0} onClick={() => setConfirming(true)}>
+                {willAssign === 0 ? "Nothing to assign" : "Continue"}
               </button>
             )}
             <button type="button" className={buttonSecondary} disabled={isPending} onClick={confirming ? () => setConfirming(false) : clear}>

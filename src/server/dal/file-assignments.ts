@@ -1,15 +1,16 @@
 import "server-only";
 import { eq, inArray } from "drizzle-orm";
+import type { z } from "zod";
 import { dedupeKey } from "@/lib/dedupe";
 import { can, type Viewer } from "@/lib/permissions";
 import { LeadDataError, parseLeadFile } from "@/lib/validation";
-import type { Db, DbOrTx } from "../db/client";
+import type { Db, DbOrTx, Tx } from "../db/client";
 import { leads, users } from "../db/schema";
 import { fail, type Failure, type Result } from "../result";
 import { assignFileInput, firstIssue, MAX_IMPORT_RECORDS } from "../validation";
 import { ASSIGNABLE_ROLES, assignInTx, type AssignProblem } from "./assignments";
 import { writeAudit } from "./audit";
-import { MAX_LISTED_PROBLEMS, type ImportProblem } from "./imports";
+import { importInTx, MAX_LISTED_PROBLEMS, type ImportProblem } from "./imports";
 
 const FORBIDDEN = fail("forbidden", "Only an admin can assign leads.");
 /** Keys per SELECT, well under Postgres's parameter limit. */
@@ -105,7 +106,7 @@ async function planAssign(db: DbOrTx, input: { fileName: string; json: string; t
     let why: string | null = null;
     if (!lead) {
       preview.notImported++;
-      why = `"${name}" isn't in the system yet. Import the file first.`;
+      why = `"${name}" isn't in the system yet. Tick “also import” to add it.`;
     } else if (lead.archived) {
       preview.archived++;
       why = `"${name}" is archived.`;
@@ -137,7 +138,9 @@ export type FileAssignResult = Result<{ preview: FileAssignPreview }> | (Failure
 
 /**
  * Assigns every unassigned lead in a file to one user, in one transaction.
- * Records are matched to existing leads by dedupe key; nothing is imported.
+ * Records are matched to existing leads by dedupe key. With `importMissing`,
+ * businesses not in the system yet are added first (existing leads are left
+ * as they are) and assigned with the rest; otherwise they are skipped.
  * Leads that belong to someone else, archived leads and unknown businesses
  * are skipped and reported, never reassigned. If anything changed since the
  * preview (the count to assign differs, or a lead was taken meanwhile), nothing is written.
@@ -151,31 +154,63 @@ export async function commitFileAssignment(
   if (!can(actor, "leads.assign")) return FORBIDDEN;
   const parsed = assignFileInput.safeParse(input);
   if (!parsed.success) return fail("invalid", firstIssue(parsed.error));
-  const { fileName, expectedAssign, toUserId } = parsed.data;
 
-  return db.transaction(async (tx): Promise<FileAssignResult> => {
-    const planned = await planAssign(tx, parsed.data);
-    if (!planned.ok) return planned;
-    const { preview, expected } = planned.plan;
-    if (preview.toAssign === 0) return fail("invalid", "There are no unassigned leads in this file to assign.");
-    if (expectedAssign !== undefined && expectedAssign !== preview.toAssign) {
-      return fail("conflict", `The leads changed since you checked this file: ${preview.toAssign} can be assigned now, not ${expectedAssign}. Nothing was changed. Check the file again.`);
-    }
-    const result = await assignInTx(
-      tx,
-      actor,
-      { leadIds: Object.keys(expected), toUserId, expected, reason: `Bulk assignment from ${fileName}` },
-      ctx,
-    );
-    // assignInTx only fails before its first write, so there is nothing to undo.
-    if (!result.ok) return result;
-    await writeAudit(tx, {
-      actorId: actor.id,
-      action: "lead.file_assigned",
-      entityType: "import",
-      after: { fileName, assignedTo: toUserId, assigned: result.changed, ownedByOthers: preview.ownedByOthers, archived: preview.archived, notImported: preview.notImported, invalid: preview.invalid, duplicates: preview.duplicates },
-      ip: ctx.ip,
+  // A failure after the import has written must undo it too, and a returned
+  // result would commit. Throwing it rolls the transaction back.
+  class Abort {
+    constructor(readonly result: FileAssignResult) {}
+  }
+  try {
+    return await db.transaction(async (tx) => {
+      const { result, imported } = await commitInTx(tx, actor, parsed.data, ctx);
+      if (!result.ok && imported > 0) throw new Abort(result);
+      return result;
     });
-    return { ok: true, preview };
+  } catch (err) {
+    if (err instanceof Abort) return err.result;
+    throw err;
+  }
+}
+
+async function commitInTx(
+  tx: Tx,
+  actor: Viewer,
+  input: z.infer<typeof assignFileInput>,
+  ctx: { ip?: string | null },
+): Promise<{ result: FileAssignResult; imported: number }> {
+  const { fileName, json, expectedAssign, toUserId, importMissing } = input;
+  let imported = 0;
+  const done = (result: FileAssignResult) => ({ result, imported });
+
+  let planned = await planAssign(tx, input);
+  if (!planned.ok) return done(planned);
+  if (importMissing && planned.plan.preview.notImported > 0) {
+    const added = await importInTx(tx, actor, fileName, json, ctx, { insertOnly: true });
+    if (!added.ok) return done(added);
+    imported = added.preview.inserted;
+    planned = await planAssign(tx, input);
+    if (!planned.ok) return done(planned);
+  }
+  const { preview, expected } = planned.plan;
+  if (preview.toAssign === 0) return done(fail("invalid", "There are no unassigned leads in this file to assign."));
+  if (expectedAssign !== undefined && expectedAssign !== preview.toAssign) {
+    return done(
+      fail("conflict", `The leads changed since you checked this file: ${preview.toAssign} can be assigned now, not ${expectedAssign}. Nothing was changed. Check the file again.`),
+    );
+  }
+  const result = await assignInTx(
+    tx,
+    actor,
+    { leadIds: Object.keys(expected), toUserId, expected, reason: `Bulk assignment from ${fileName}` },
+    ctx,
+  );
+  if (!result.ok) return done(result);
+  await writeAudit(tx, {
+    actorId: actor.id,
+    action: "lead.file_assigned",
+    entityType: "import",
+    after: { fileName, assignedTo: toUserId, assigned: result.changed, imported, ownedByOthers: preview.ownedByOthers, archived: preview.archived, notImported: preview.notImported, invalid: preview.invalid, duplicates: preview.duplicates },
+    ip: ctx.ip,
   });
+  return done({ ok: true, preview });
 }

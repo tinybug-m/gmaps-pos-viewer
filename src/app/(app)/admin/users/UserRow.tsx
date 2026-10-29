@@ -209,7 +209,7 @@ export default function UserRow({ user, isSelf }: { user: UserDTO; isSelf: boole
             >
               {pending ? "Deactivating…" : `Deactivate ${user.name}`}
             </button>
-            <button type="button" className={buttonSecondary} disabled={pending} onClick={() => setMode("view")}>
+            <button type="button" className={buttonSecondary} disabled={pending} onClick={() => { setError(null); setMode("view"); }}>
               Cancel
             </button>
           </div>
@@ -242,7 +242,7 @@ export default function UserRow({ user, isSelf }: { user: UserDTO; isSelf: boole
             >
               {pending ? "Resetting…" : "Reset password"}
             </button>
-            <button type="button" className={buttonSecondary} disabled={pending} onClick={() => setMode("view")}>
+            <button type="button" className={buttonSecondary} disabled={pending} onClick={() => { setError(null); setMode("view"); }}>
               Cancel
             </button>
           </div>

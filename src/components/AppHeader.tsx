@@ -42,7 +42,7 @@ export default function AppHeader({
             </span>
           </span>
           <Link href="/account/password" className="text-sm text-slate-500 hover:text-slate-800">
-            Password
+            Change password
           </Link>
           <form action={logoutAction}>
             <button type="submit" className="text-sm font-medium text-slate-500 hover:text-slate-800">

@@ -32,10 +32,21 @@ export default function MultiSelectDropdown({
   }
 
   return (
-    <div className="relative" ref={ref}>
+    <div
+      className="relative"
+      ref={ref}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") setOpen(false);
+      }}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false);
+      }}
+    >
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="true"
         className={`flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium ${
           selected.size > 0
             ? "border-slate-400 bg-slate-50 text-slate-800"
@@ -62,7 +73,7 @@ export default function MultiSelectDropdown({
       </button>
 
       {open && (
-        <div className="absolute left-0 z-20 mt-1.5 max-h-72 w-72 overflow-y-auto rounded-md border border-slate-200 bg-white p-1.5 shadow-lg">
+        <div className="absolute left-0 z-20 mt-1.5 max-h-72 w-72 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-md border border-slate-200 bg-white p-1.5 shadow-lg">
           {options.length === 0 && <p className="px-2 py-2 text-sm text-slate-500">No options</p>}
           {selected.size > 0 && (
             <button

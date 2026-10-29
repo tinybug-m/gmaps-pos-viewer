@@ -89,7 +89,7 @@ export default function BulkAssignBar({
   return (
     <section
       aria-label="Assign selected leads"
-      className="sticky top-2 z-10 flex flex-col gap-3 rounded-lg bg-white p-4 shadow-sm ring-1 ring-slate-300"
+      className="z-10 flex flex-col gap-3 rounded-lg bg-white p-4 shadow-sm ring-1 ring-slate-300 lg:sticky lg:top-2"
     >
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
         <p className="text-sm font-medium text-slate-800 lg:pb-2" aria-live="polite">
