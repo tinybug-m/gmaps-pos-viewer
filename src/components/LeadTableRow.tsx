@@ -5,6 +5,7 @@ import PriorityBadge from "@/components/PriorityBadge";
 import SourceBadge from "@/components/SourceBadge";
 import StatusBadge from "@/components/StatusBadge";
 import { SEVERITY_ORDER } from "@/lib/issues";
+import { formatDate, formatDateTime } from "@/lib/time";
 import { OUTCOME_LABEL } from "@/lib/workflow";
 import type { TeamLead } from "@/types/lead";
 
@@ -142,6 +143,12 @@ export default function LeadTableRow({
       <td className="whitespace-nowrap px-4 py-3">
         {w.followUp ? <FollowUpBadge dueAt={w.followUp.dueAt} bucket={w.followUp.bucket} /> : <span className="text-slate-500">—</span>}
       </td>
+      <td className="hidden whitespace-nowrap px-4 py-3 text-xs tabular-nums text-slate-600 xl:table-cell">
+        {w.lastCallAt ? <time dateTime={w.lastCallAt.toISOString()}>{formatDateTime(w.lastCallAt)}</time> : <span className="text-slate-500">Never</span>}
+      </td>
+      <td className="hidden whitespace-nowrap px-4 py-3 text-xs tabular-nums text-slate-600 xl:table-cell">
+        <time dateTime={w.addedAt.toISOString()}>{formatDate(w.addedAt)}</time>
+      </td>
       <td className="px-4 py-3 text-sm text-slate-600">
         {lead.status === "NO_WEBSITE" ? (
           <span className="italic text-teal-800">
@@ -169,7 +176,7 @@ export default function LeadTableRow({
           </>
         )}
       </td>
-      <td className="whitespace-nowrap px-4 py-3" onClick={(e) => e.stopPropagation()}>
+      <td className="hidden whitespace-nowrap px-4 py-3 xl:table-cell" onClick={(e) => e.stopPropagation()}>
         <div className="flex flex-col items-start gap-1">
           {lead.websiteUrl ? (
             <a

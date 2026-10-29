@@ -15,6 +15,7 @@ import {
   type PersonMetrics,
   type TeamTotals,
 } from "@/server/dal/metrics";
+import { ASSIGNABLE_ROLES } from "@/server/dal/assignments";
 import { getDb } from "@/server/db/client";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -200,7 +201,7 @@ function PeopleTable({ people }: { people: PersonMetrics[] }) {
             {people.map((p) => (
               <tr key={p.id} className={p.isActive ? "" : "text-slate-500"}>
                 <th scope="row" className="px-4 py-2 text-left font-medium">
-                  {p.role === "supervisor" ? (
+                  {p.role === "supervisor" || !p.isActive || !ASSIGNABLE_ROLES.includes(p.role) ? (
                     p.name
                   ) : (
                     <Link href={`/queue?user=${p.id}`} className="hover:underline">

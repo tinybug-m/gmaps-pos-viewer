@@ -288,9 +288,9 @@ export function VoidButton({ type, entryId }: { type: "call" | "note"; entryId: 
       }}
     >
       <label htmlFor={reasonId} className="text-xs font-medium text-slate-700">
-        Why is this {type} being voided?
+        Why is this {type} being voided? (at least 3 characters)
       </label>
-      <input id={reasonId} className={`${input} py-1`} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
+      <input id={reasonId} autoFocus className={`${input} py-1`} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
       <FormMessage error={error} />
       <div className="flex gap-2">
         <button type="submit" className={`${buttonDanger} py-1`} disabled={reason.trim().length < 3 || pending}>

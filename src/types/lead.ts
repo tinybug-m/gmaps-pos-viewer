@@ -112,6 +112,8 @@ export interface LeadWorkflow {
   attemptCount: number;
   lastOutcome: CallOutcome | null;
   lastCallAt: Date | null;
+  /** When the lead was first imported. */
+  addedAt: Date;
   /** The lead's open follow-up, bucketed against the server's clock at request time. */
   followUp: { dueAt: Date; bucket: FollowUpBucket } | null;
   reviewRequested: boolean;

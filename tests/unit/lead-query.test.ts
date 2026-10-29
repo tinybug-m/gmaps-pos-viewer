@@ -30,6 +30,7 @@ function workflow(overrides: Partial<LeadWorkflow> = {}): LeadWorkflow {
     lastOutcome: null,
     lastCallAt: null,
     followUp: null,
+    addedAt: new Date("2026-01-01T00:00:00Z"),
     reviewRequested: false,
     archived: false,
     version: 1,
@@ -169,6 +170,19 @@ describe("sortTeamLeads", () => {
       "Soon",
       "None",
     ]);
+  });
+
+  it("sorts by when a lead was added, newest first by default, and by last call with never-called last", () => {
+    const old = lead("Old", { addedAt: new Date("2026-01-01T00:00:00Z"), lastCallAt: new Date("2026-03-01T00:00:00Z") });
+    const recent = lead("Recent", { addedAt: new Date("2026-03-01T00:00:00Z"), lastCallAt: new Date("2026-03-05T00:00:00Z") });
+    const never = lead("Never", { addedAt: new Date("2026-02-01T00:00:00Z") });
+    expect(parse("sort=added").sort).toEqual({ key: "added", direction: "desc" });
+    const names = (key: "added" | "lastCall", direction: "asc" | "desc") =>
+      sortTeamLeads([old, never, recent], { key, direction }).map((l) => l.name);
+    expect(names("added", "desc")).toEqual(["Recent", "Never", "Old"]);
+    expect(names("added", "asc")).toEqual(["Old", "Never", "Recent"]);
+    expect(names("lastCall", "desc")).toEqual(["Recent", "Old", "Never"]);
+    expect(names("lastCall", "asc")).toEqual(["Old", "Recent", "Never"]);
   });
 
   it("orders the pipeline by workflow stage, then name", () => {

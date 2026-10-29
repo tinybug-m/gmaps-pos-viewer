@@ -18,7 +18,7 @@ import { fail, type Failure, type Result } from "@/server/result";
 const FORBIDDEN = fail("forbidden", "Only an admin can assign leads.");
 
 /** The uploaded file and chosen user. The DAL validates the contents. */
-async function readForm(formData: FormData): Promise<{ fileName: string; json: string; toUserId: string; expectedAssign?: number } | Failure> {
+async function readForm(formData: FormData): Promise<{ fileName: string; json: string; toUserId: string; expectedAssign?: number; importMissing?: boolean } | Failure> {
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return fail("invalid", "Choose a JSON export file.");
   if (file.size > MAX_IMPORT_BYTES) {
@@ -30,6 +30,7 @@ async function readForm(formData: FormData): Promise<{ fileName: string; json: s
     json: await file.text(),
     toUserId: String(formData.get("toUserId") ?? ""),
     ...(expected !== null && { expectedAssign: Number(expected) }),
+    importMissing: formData.get("importMissing") === "1",
   };
 }
 

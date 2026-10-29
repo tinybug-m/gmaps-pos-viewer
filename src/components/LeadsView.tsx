@@ -7,17 +7,20 @@ import { useEffect, useOptimistic, useRef, useState, useTransition, type ReactNo
 import EmptyState from "@/components/EmptyState";
 import FilterBar from "@/components/FilterBar";
 import LeadDetailDrawer from "@/components/LeadDetailDrawer";
-import LeadTable, { type TableSelection } from "@/components/LeadTable";
+import LeadTable, { sortOptions, type TableSelection } from "@/components/LeadTable";
 import SearchBar from "@/components/SearchBar";
 import SummaryCards from "@/components/SummaryCards";
-import { buttonSecondary } from "@/components/ui/styles";
+import { buttonSecondary, input } from "@/components/ui/styles";
 import {
   defaultLeadQuery,
   isDefaultLeadQuery,
+  nextLeadSort,
   PAGE_SIZE,
   parseLeadQuery,
   serializeLeadQuery,
   type LeadList,
+  type LeadSort,
+  type LeadSortKey,
   type LeadQuery,
 } from "@/lib/lead-query";
 
@@ -148,7 +151,14 @@ export default function LeadsView({
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <SearchBar value={draft} onChange={search} />
+          <div className="flex flex-1 flex-wrap items-center gap-3">
+            <SearchBar value={draft} onChange={search} />
+            <SortMenu
+              sort={current.sort}
+              options={sortOptions(list.options.showOutreach, permissions.viewAll)}
+              onChange={(sort) => change({ ...current, sort })}
+            />
+          </div>
           <p className="text-sm text-slate-500" aria-live="polite">
             {list.matching === 0 ? (
               <>No matching leads</>
@@ -242,6 +252,44 @@ export default function LeadsView({
           }
         />
       )}
+    </div>
+  );
+}
+
+function SortMenu({
+  sort,
+  options,
+  onChange,
+}: {
+  sort: LeadSort;
+  options: { key: LeadSortKey; label: string }[];
+  onChange: (sort: LeadSort) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1.5 text-sm text-slate-600">
+      <label htmlFor="lead-sort">Sort by</label>
+      <div className="w-40">
+      <select
+        id="lead-sort"
+        value={sort.key}
+        onChange={(e) => onChange(nextLeadSort(sort, e.target.value as LeadSortKey))}
+        className={input}
+      >
+        {options.map((o) => (
+          <option key={o.key} value={o.key}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      </div>
+      <button
+        type="button"
+        onClick={() => onChange({ ...sort, direction: sort.direction === "asc" ? "desc" : "asc" })}
+        aria-label={`Sort direction: ${sort.direction === "asc" ? "ascending" : "descending"}. Click to reverse.`}
+        className={buttonSecondary}
+      >
+        {sort.direction === "asc" ? "↑ Asc" : "↓ Desc"}
+      </button>
     </div>
   );
 }

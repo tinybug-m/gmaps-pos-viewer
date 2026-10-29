@@ -25,6 +25,13 @@ export default async function ImportPage() {
           Trustpilot or Google Maps link, so importing the same file twice adds nothing. New leads arrive
           unassigned.
         </p>
+        <p className="mt-1 max-w-2xl text-sm text-slate-500">
+          To give a file to a team member, use{" "}
+          <Link href="/admin/assign-file" className="font-medium text-slate-700 underline">
+            Assign file
+          </Link>
+          . It can import the businesses that are missing and assign them in one step.
+        </p>
       </header>
 
       <div className="rounded-lg bg-white p-6 ring-1 ring-slate-200">

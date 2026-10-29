@@ -174,4 +174,40 @@ describeDb("assigning a lead file", () => {
     expect(await openPeriods(ids)).toHaveLength(0);
     expect(await t.db.select().from(auditLog).where(and(eq(auditLog.action, "lead.assigned"), inArray(auditLog.entityId, ids)))).toHaveLength(0);
   });
+  it("imports businesses that aren't in the system yet and assigns them, when asked", async () => {
+    const known = await seed(1);
+    const fresh = [rawLead(), rawLead()];
+    const records = [...known.records, ...fresh];
+    const names = fresh.map((r) => r.name);
+
+    // Without the option the new ones are skipped.
+    expect(await previewFileAssignment(t.db, admin, file(records, alice.id))).toMatchObject({ ok: true, preview: { toAssign: 1, notImported: 2 } });
+
+    const res = await commitFileAssignment(t.db, admin, file(records, alice.id, { importMissing: true, expectedAssign: 3 }));
+    expect(res).toMatchObject({ ok: true, preview: { toAssign: 3, notImported: 0 } });
+    const rows = await t.db.select().from(leads).where(inArray(leads.name, names));
+    expect(rows).toHaveLength(2);
+    expect(rows.every((r) => r.assignedTo === alice.id && r.firstImportId !== null)).toBe(true);
+    expect(await owners(known.ids)).toEqual([alice.id]);
+  });
+
+  it("leaves existing leads untouched when importing the missing ones", async () => {
+    const { records, ids } = await seed(1);
+    const [before] = await t.db.select().from(leads).where(eq(leads.id, ids[0]));
+    const changed = [{ ...records[0], name: `${records[0].name} renamed` }, rawLead()];
+    const res = await commitFileAssignment(t.db, admin, file(changed, alice.id, { importMissing: true }));
+    expect(res).toMatchObject({ ok: true });
+    const [after] = await t.db.select().from(leads).where(eq(leads.id, ids[0]));
+    expect(after.name).toBe(before.name);
+    expect(after.assignedTo).toBe(alice.id);
+  });
+
+  it("undoes the import when the assignment then fails", async () => {
+    const known = await seed(1);
+    const fresh = rawLead();
+    const res = await commitFileAssignment(t.db, admin, file([...known.records, fresh], alice.id, { importMissing: true, expectedAssign: 99 }));
+    expect(res).toMatchObject({ ok: false, code: "conflict" });
+    expect(await t.db.select().from(leads).where(eq(leads.name, fresh.name))).toHaveLength(0);
+    expect(await owners(known.ids)).toEqual([null]);
+  });
 });

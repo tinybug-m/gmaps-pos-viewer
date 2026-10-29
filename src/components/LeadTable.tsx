@@ -4,7 +4,7 @@ import LeadTableRow from "@/components/LeadTableRow";
 import { nextLeadSort, type LeadSort, type LeadSortKey } from "@/lib/lead-query";
 import type { TeamLead } from "@/types/lead";
 
-const COLUMNS: { key: LeadSortKey | null; label: string; only?: "outreach" | "assignee" }[] = [
+const COLUMNS: { key: LeadSortKey | null; label: string; only?: "outreach" | "assignee"; wide?: boolean }[] = [
   { key: "priority", label: "Priority" },
   { key: "name", label: "Business" },
   { key: "call", label: "Call", only: "outreach" },
@@ -13,9 +13,20 @@ const COLUMNS: { key: LeadSortKey | null; label: string; only?: "outreach" | "as
   { key: "pipeline", label: "Pipeline" },
   { key: "assignee", label: "Assignee", only: "assignee" },
   { key: "followUp", label: "Follow-up" },
+  { key: "lastCall", label: "Last call", wide: true },
+  { key: "added", label: "Added", wide: true },
   { key: null, label: "Main Issues" },
-  { key: null, label: "Links" },
+  { key: null, label: "Links", wide: true },
 ];
+
+/** The sortable columns the viewer can see, for a sort menu that works at any width. */
+export function sortOptions(showOutreach: boolean, showAssignee: boolean): { key: LeadSortKey; label: string }[] {
+  return visibleColumns(showOutreach, showAssignee).flatMap((c) => (c.key ? [{ key: c.key, label: c.label }] : []));
+}
+
+function visibleColumns(showOutreach: boolean, showAssignee: boolean) {
+  return COLUMNS.filter((col) => (col.only !== "outreach" || showOutreach) && (col.only !== "assignee" || showAssignee));
+}
 
 export interface TableSelection {
   selected: ReadonlySet<string>;
@@ -41,14 +52,12 @@ export default function LeadTable({
   showAssignee: boolean;
   selection?: TableSelection;
 }) {
-  const columns = COLUMNS.filter(
-    (col) => (col.only !== "outreach" || showOutreach) && (col.only !== "assignee" || showAssignee),
-  );
+  const columns = visibleColumns(showOutreach, showAssignee);
   const pageSelected = selection ? leads.filter((l) => selection.selected.has(l.id)).length : 0;
 
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-      <table className={`w-full border-collapse text-left ${showOutreach ? "min-w-[1240px]" : "min-w-[1080px]"}`}>
+      <table className={`w-full border-collapse text-left ${showOutreach ? "min-w-[1000px] xl:min-w-[1440px]" : "min-w-[880px] xl:min-w-[1280px]"}`}>
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50">
             {selection && (
@@ -71,7 +80,7 @@ export default function LeadTable({
                 <th
                   key={col.label}
                   aria-sort={active ? (sort.direction === "asc" ? "ascending" : "descending") : undefined}
-                  className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-slate-500"
+                  className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-slate-500 ${col.wide ? "hidden xl:table-cell" : ""}`}
                 >
                   {col.key ? (
                     <button

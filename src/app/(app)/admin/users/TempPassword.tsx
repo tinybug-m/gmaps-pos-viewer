@@ -7,6 +7,7 @@ import { buttonSecondary } from "@/components/ui/styles";
 /** A one-time password, shown once. It isn't stored in clear anywhere, so it can't be shown again. */
 export default function TempPassword({ who, password, onDismiss }: { who: string; password: string; onDismiss: () => void }) {
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   return (
     <div role="status" className="flex flex-col gap-2 rounded-md bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">
       <p>
@@ -24,8 +25,10 @@ export default function TempPassword({ who, password, onDismiss }: { who: string
             try {
               await navigator.clipboard.writeText(password);
               setCopied(true);
+              setCopyFailed(false);
             } catch {
               setCopied(false);
+              setCopyFailed(true);
             }
           }}
         >
@@ -35,6 +38,7 @@ export default function TempPassword({ who, password, onDismiss }: { who: string
           Done
         </button>
       </div>
+      {copyFailed && <p className="text-xs">Couldn&apos;t copy automatically. Select the password above and copy it by hand.</p>}
     </div>
   );
 }

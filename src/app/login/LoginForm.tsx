@@ -22,6 +22,7 @@ export default function LoginForm({ next }: { next: string }) {
           name="email"
           type="email"
           autoComplete="username"
+          autoFocus
           required
           defaultValue={state.email}
           className={input}

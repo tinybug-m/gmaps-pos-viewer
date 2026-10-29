@@ -12,5 +12,4 @@ Check the dal-cheatsheet memory first.
 - While working: `pnpm vitest related <changed files> --reporter=dot`.
   Full gate (lint, typecheck, test, build, e2e) only before a commit, when I ask.
 - Browser checks: `pnpm test:e2e` (optionally -g "<name>"), not the Playwright MCP.
-- No forked or parallel agents unless I ask.
 - When a task is done, say "done, ready to /clear".

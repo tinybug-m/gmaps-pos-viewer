@@ -116,12 +116,12 @@ export default async function LeadPage(props: PageProps<"/leads/[id]">) {
               This lead is closed. Ask an admin if it should be reopened.
             </p>
           )}
-          {canStatus && <StatusChanger leadId={lead.id} version={w.version} status={w.pipelineStatus} role={viewer.role} />}
+          {canStatus && <StatusChanger key={`${w.pipelineStatus}-${w.version}`} leadId={lead.id} version={w.version} status={w.pipelineStatus} role={viewer.role} />}
           {canFollowUp && <FollowUpPanel leadId={lead.id} status={w.pipelineStatus} openFollowUp={activity.openFollowUp} />}
           {canNote && <NoteForm leadId={lead.id} canFeedback={can(viewer, "lead.addFeedback")} assigneeName={w.assignee?.name ?? null} />}
           <Timeline entries={activity.entries} canVoid={can(viewer, "entries.void")} />
         </div>
-        <div className={`${card} p-4 lg:order-1`}>
+        <div className={`${card} order-first p-4 lg:order-1`}>
           <LeadDetails lead={lead} />
         </div>
       </div>

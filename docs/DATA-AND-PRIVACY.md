@@ -10,7 +10,7 @@
   pnpm db:import --file=refrence/data.json --as=<admin email>                              # dry run (reads only)
   pnpm db:import --file=refrence/data.json --as=<admin email> --commit --confirm=<dbname>  # write
   ```
-  Admins can do the same through **Import** in the app. Re-running an import changes nothing, and the source file is only read.
+  Admins can do the same through **Import** in the app. Re-running an import changes nothing, and the source file is only read. **Assign file** can also import a file's missing businesses and give them to one team member in a single step. It adds new businesses only and never changes existing leads.
 
 ## Real exports never go in git
 
