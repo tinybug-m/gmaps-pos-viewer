@@ -146,7 +146,7 @@ export default function LeadTableRow({
       <td className="hidden whitespace-nowrap px-4 py-3 text-xs tabular-nums text-slate-600 xl:table-cell">
         {w.lastCallAt ? <time dateTime={w.lastCallAt.toISOString()}>{formatDateTime(w.lastCallAt)}</time> : <span className="text-slate-500">Never</span>}
       </td>
-      <td className="hidden whitespace-nowrap px-4 py-3 text-xs tabular-nums text-slate-600 xl:table-cell">
+      <td className="whitespace-nowrap px-4 py-3 text-xs tabular-nums text-slate-600">
         <time dateTime={w.addedAt.toISOString()}>{formatDate(w.addedAt)}</time>
       </td>
       <td className="px-4 py-3 text-sm text-slate-600">

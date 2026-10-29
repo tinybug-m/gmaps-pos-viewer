@@ -14,7 +14,7 @@ const COLUMNS: { key: LeadSortKey | null; label: string; only?: "outreach" | "as
   { key: "assignee", label: "Assignee", only: "assignee" },
   { key: "followUp", label: "Follow-up" },
   { key: "lastCall", label: "Last call", wide: true },
-  { key: "added", label: "Added", wide: true },
+  { key: "added", label: "Date imported" },
   { key: null, label: "Main Issues" },
   { key: null, label: "Links", wide: true },
 ];
@@ -57,7 +57,7 @@ export default function LeadTable({
 
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-      <table className={`w-full border-collapse text-left ${showOutreach ? "min-w-[1000px] xl:min-w-[1440px]" : "min-w-[880px] xl:min-w-[1280px]"}`}>
+      <table className={`w-full border-collapse text-left ${showOutreach ? "min-w-[1100px] xl:min-w-[1440px]" : "min-w-[880px] xl:min-w-[1280px]"}`}>
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50">
             {selection && (

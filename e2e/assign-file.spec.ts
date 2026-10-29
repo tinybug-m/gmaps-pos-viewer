@@ -45,9 +45,9 @@ test("leads can be sorted by when they were added and by last call", async ({ pa
   await signIn(page, "admin");
   await page.goto("/leads");
   await page.waitForLoadState("networkidle");
-  await page.getByLabel("Sort by").selectOption({ label: "Added" });
+  await page.getByLabel("Sort by").selectOption({ label: "Date imported" });
   await expect(page).toHaveURL(/sort=added&dir=desc/);
   await page.getByRole("button", { name: /Last call/ }).click();
   await expect(page).toHaveURL(/sort=lastCall/);
-  await expect(page.getByRole("columnheader", { name: /Added/ })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: /Date imported/ })).toBeVisible();
 });
